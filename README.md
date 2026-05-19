@@ -145,3 +145,4 @@ shared/
 │                       # LocationManager (FusedLocationProvider), AppInfo
 └── iosMain/            # actuals: TokenStore (Keychain), LocationManager (CLLocationManager), AppInfo
 ```
+# SurfAPIKitMP
