@@ -12,8 +12,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout tag
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
@@ -51,11 +53,20 @@ jobs:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
 
-      - name: Update Package.swift
+      - name: Update Package.swift on main and move tag
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          CHECKSUM: ${{ steps.zip.outputs.CHECKSUM }}
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-          CHECKSUM=${{ steps.zip.outputs.CHECKSUM }}
-          URL="https://github.com/Surf-DevOps/SurfAPIKitMP/releases/download/v$VERSION/SurfAPIKit.xcframework.zip"
+          set -euo pipefail
+          URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/SurfAPIKit.xcframework.zip"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main
+          git checkout -B main origin/main
+
           cat > Package.swift <<EOF
           // swift-tools-version: 5.9
           import PackageDescription
@@ -72,21 +83,20 @@ jobs:
               targets: [
                   .binaryTarget(
                       name: "SurfAPIKit",
-                      url: "$URL",
-                      checksum: "$CHECKSUM"
+                      url: "${URL}",
+                      checksum: "${CHECKSUM}"
                   )
               ]
           )
           EOF
 
-      - name: Commit Package.swift to main
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git checkout main
           git add Package.swift
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update Package.swift for v${{ steps.version.outputs.VERSION }}"
+            git commit -m "chore: update Package.swift for v${VERSION}"
             git push origin main
           fi
+
+          # A tag DEVE apontar para o commit cujo Package.swift tem o checksum correto,
+          # senão o SPM resolve a tag para o commit anterior (com placeholder) e quebra.
+          git tag -f "v${VERSION}"
+          git push origin "v${VERSION}" --force
