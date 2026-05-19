@@ -1,8 +1,7 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
-// IMPORTANTE: este Package.swift é atualizado automaticamente pelo workflow .github/workflows/release.yml
-// a cada nova tag — a URL e o checksum apontam para o XCFramework anexado na GitHub Release correspondente.
+// Atualizado automaticamente pelo workflow .github/workflows/release.yml a cada tag.
 let package = Package(
     name: "SurfAPIKit",
     platforms: [
@@ -15,7 +14,7 @@ let package = Package(
         .binaryTarget(
             name: "SurfAPIKit",
             url: "https://github.com/Surf-DevOps/SurfAPIKitMP/releases/download/v1.0.0/SurfAPIKit.xcframework.zip",
-            checksum: "REPLACE_ME_ON_FIRST_RELEASE"
+            checksum: "a4abe5a0e754e7a49b8fb9af9a7793c5306baf504fb20231df146619c5de93be"
         )
     ]
 )
