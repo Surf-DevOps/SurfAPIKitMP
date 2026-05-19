@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -21,6 +22,7 @@ kotlin {
         publishLibraryVariants("release")
     }
 
+    val xcf = XCFramework("SurfAPIKit")
     listOf(
         iosX64(),
         iosArm64(),
@@ -29,6 +31,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "SurfAPIKit"
             isStatic = true
+            xcf.add(this)
         }
     }
 
@@ -74,13 +77,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-}
-
-// XCFramework task for SPM distribution
-tasks.register("assembleXCFramework") {
-    group = "build"
-    description = "Assembles the SurfAPIKit XCFramework for iOS distribution"
-    dependsOn("assembleSurfAPIKitReleaseXCFramework")
 }
 
 publishing {

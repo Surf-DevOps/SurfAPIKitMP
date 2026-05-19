@@ -2,6 +2,7 @@ package io.github.surfdevops.surfapikit.features.authentication.refreshtoken
 
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
+import io.github.surfdevops.surfapikit.core.joinUrl
 import io.ktor.client.call.body
 import io.ktor.client.request.headers
 import io.ktor.client.request.request
@@ -10,7 +11,6 @@ import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
-import io.ktor.http.takeFrom
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -37,14 +37,10 @@ internal object RefreshTokenEndpoint : Endpoint {
 }
 
 internal suspend fun SurfApiKit.refreshTokenInternal(request: RefreshTokenRequest): RefreshTokenSuccess {
-    val baseUrl = client.environment.baseUrl
-    val cleanPath = RefreshTokenEndpoint.path.removePrefix("/")
+    val fullUrl = joinUrl(client.environment.baseUrl, RefreshTokenEndpoint.path)
     val response: HttpResponse = client.http.request {
         method = HttpMethod.Post
-        url {
-            takeFrom(baseUrl)
-            encodedPath = (encodedPath.trimEnd('/') + "/" + cleanPath)
-        }
+        url(fullUrl)
         headers {
             append("Content-Type", "application/json")
             append("Accept", "application/json")

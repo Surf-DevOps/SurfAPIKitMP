@@ -7,6 +7,7 @@ import io.github.surfdevops.surfapikit.core.createPlatformTokenStore
 import io.github.surfdevops.surfapikit.features.authentication.refreshtoken.RefreshTokenRequest
 import io.github.surfdevops.surfapikit.features.authentication.refreshtoken.refreshTokenInternal
 import io.ktor.client.plugins.auth.providers.BearerTokens
+import kotlin.concurrent.Volatile
 
 object SurfApiKit {
 
@@ -16,24 +17,18 @@ object SurfApiKit {
     @Volatile
     private var tokenStoreOverride: TokenStore? = null
 
-    private val lock = Any()
-
     @Volatile
     private var _client: ApiClient? = null
 
     val client: ApiClient
-        get() = _client ?: synchronized(lock) {
-            _client ?: build().also { _client = it }
-        }
+        get() = _client ?: build().also { _client = it }
 
     val tokenStore: TokenStore get() = client.tokenStore
 
     fun configure(environment: ApiEnvironment = this.environment, tokenStore: TokenStore? = null) {
-        synchronized(lock) {
-            this.environment = environment
-            this.tokenStoreOverride = tokenStore
-            _client = build()
-        }
+        this.environment = environment
+        this.tokenStoreOverride = tokenStore
+        _client = build()
     }
 
     fun clearTokens() {

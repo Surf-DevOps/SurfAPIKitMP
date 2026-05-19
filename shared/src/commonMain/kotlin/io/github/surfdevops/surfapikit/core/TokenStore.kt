@@ -1,5 +1,6 @@
 package io.github.surfdevops.surfapikit.core
 
+import kotlin.concurrent.Volatile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,15 +23,21 @@ interface TokenStore {
 
 class InMemoryTokenStore : TokenStore {
     @Volatile override var selectionToken: String? = null
-    @Volatile override var accessToken: String? = null
+    @Volatile private var _accessToken: String? = null
+    @Volatile override var refreshToken: String? = null
+    @Volatile private var _tokenType: String? = null
+
+    override var accessToken: String?
+        get() = _accessToken
         set(value) {
-            field = value
+            _accessToken = value
             _authChanges.value = _authChanges.value + 1
         }
-    @Volatile override var refreshToken: String? = null
-    @Volatile override var tokenType: String? = null
+
+    override var tokenType: String?
+        get() = _tokenType
         set(value) {
-            field = value
+            _tokenType = value
             _authChanges.value = _authChanges.value + 1
         }
 

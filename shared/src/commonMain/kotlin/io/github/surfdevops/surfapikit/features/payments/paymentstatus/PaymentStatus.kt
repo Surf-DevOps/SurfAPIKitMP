@@ -3,12 +3,12 @@ package io.github.surfdevops.surfapikit.features.payments.paymentstatus
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.ApiError
 import io.github.surfdevops.surfapikit.core.Endpoint
+import io.github.surfdevops.surfapikit.core.joinUrl
 import io.ktor.client.request.headers
 import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpMethod
-import io.ktor.http.takeFrom
 import io.ktor.utils.io.readUTF8Line
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -56,18 +56,14 @@ internal data class PaymentStatusEndpoint(val paymentId: String) : Endpoint {
 
 fun SurfApiKit.statusStream(paymentId: String): Flow<PaymentStatusStreamResult> = flow {
     val endpoint = PaymentStatusEndpoint(paymentId)
-    val baseUrl = client.environment.baseUrl
-    val cleanPath = endpoint.path.removePrefix("/")
+    val fullUrl = joinUrl(client.environment.baseUrl, endpoint.path)
     val json = Json { ignoreUnknownKeys = true }
 
     var hasReceivedData = false
 
     client.http.prepareRequest {
         method = HttpMethod.Get
-        url {
-            takeFrom(baseUrl)
-            encodedPath = (encodedPath.trimEnd('/') + "/" + cleanPath)
-        }
+        url(fullUrl)
         headers {
             endpoint.headers.forEach { (k, v) -> append(k, v) }
         }

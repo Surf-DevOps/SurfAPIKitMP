@@ -18,37 +18,28 @@ data class ApiErrorResponse(
 }
 
 sealed class ApiError : Throwable() {
-    data class Transport(val cause: Throwable) : ApiError() {
-        override val message: String get() = cause.message ?: "Network error"
-    }
+    data class Transport(override val cause: Throwable) : ApiError()
+    data object InvalidUrl : ApiError()
+    data class InvalidRequest(val msg: String) : ApiError()
+    data class Decoding(override val cause: Throwable) : ApiError()
+    data class Server(val status: Int, val code: Int? = null, val serverMessage: String? = null) : ApiError()
+    data class Api(val code: Int, val apiMessage: String) : ApiError()
+    data object Unknown : ApiError()
 
-    data object InvalidUrl : ApiError() {
-        private fun readResolve(): Any = InvalidUrl
-        override val message: String get() = "Invalid URL"
-    }
-
-    data class InvalidRequest(override val message: String) : ApiError()
-
-    data class Decoding(val cause: Throwable) : ApiError() {
-        override val message: String get() = "Decoding error: ${cause.message}"
-    }
-
-    data class Server(val status: Int, val code: Int? = null, val serverMessage: String? = null) : ApiError() {
-        override val message: String get() = buildString {
-            append("Server error (HTTP $status)")
-            if (code != null) append(" - Code: $code")
-            if (serverMessage != null) append(" - $serverMessage")
+    override val message: String
+        get() = when (this) {
+            is Transport -> cause.message ?: "Network error"
+            is InvalidUrl -> "Invalid URL"
+            is InvalidRequest -> msg
+            is Decoding -> "Decoding error: ${cause.message ?: ""}"
+            is Server -> buildString {
+                append("Server error (HTTP $status)")
+                if (code != null) append(" - Code: $code")
+                if (serverMessage != null) append(" - $serverMessage")
+            }
+            is Api -> apiMessage
+            Unknown -> "Ocorreu um erro inesperado. Por favor, tente novamente."
         }
-    }
-
-    data class Api(val code: Int, val apiMessage: String) : ApiError() {
-        override val message: String get() = apiMessage
-    }
-
-    data object Unknown : ApiError() {
-        private fun readResolve(): Any = Unknown
-        override val message: String get() = "Ocorreu um erro inesperado. Por favor, tente novamente."
-    }
 
     val errorCode: Int?
         get() = when (this) {

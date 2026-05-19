@@ -8,31 +8,20 @@ import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.headers
+import io.ktor.client.request.parameter
 import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.URLBuilder
-import io.ktor.http.parameters
-import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.serializer
 
 class ApiClient internal constructor(
     val environment: ApiEnvironment,
@@ -46,7 +35,7 @@ class ApiClient internal constructor(
         isLenient = true
     }
 
-    internal val http: HttpClient = HttpClient {
+    val http: HttpClient = HttpClient {
         expectSuccess = false
 
         install(HttpTimeout) {
@@ -75,10 +64,6 @@ class ApiClient internal constructor(
                 sendWithoutRequest { true }
             }
         }
-
-        defaultRequest {
-            url(environment.baseUrl)
-        }
     }
 
     fun clearTokens() = tokenStore.clear()
@@ -90,12 +75,7 @@ class ApiClient internal constructor(
     ): T {
         val response = execute(endpoint, body, query, allowEmpty = false)
         return try {
-            if (T::class == HttpResponse::class) {
-                @Suppress("UNCHECKED_CAST")
-                response as T
-            } else {
-                response.body()
-            }
+            response.body()
         } catch (e: ApiError) {
             throw e
         } catch (e: Throwable) {
@@ -121,18 +101,12 @@ class ApiClient internal constructor(
         val response: HttpResponse = try {
             http.request {
                 method = endpoint.method
-                url {
-                    takeFrom(environment.baseUrl)
-                    appendPath(endpoint.path)
-                    query?.forEach { (k, v) -> if (v != null) parameters.append(k, v.toString()) }
-                }
+                url(joinUrl(environment.baseUrl, endpoint.path))
                 headers {
                     endpoint.headers.forEach { (k, v) -> append(k, v) }
                 }
-                if (body != null) {
-                    contentTypeJson()
-                    setBody(body)
-                }
+                query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
+                if (body != null) setBody(body)
             }
         } catch (e: ApiError) {
             throw e
@@ -148,17 +122,6 @@ class ApiClient internal constructor(
         return response
     }
 
-    @PublishedApi
-    internal fun HttpRequestBuilder.contentTypeJson() {
-        headers.remove("Content-Type")
-        headers.append("Content-Type", "application/json")
-    }
-
-    private fun URLBuilder.appendPath(path: String) {
-        val clean = path.removePrefix("/")
-        encodedPath = (encodedPath.trimEnd('/') + "/" + clean)
-    }
-
     private fun parseApiError(text: String?, statusCode: Int): ApiError {
         if (text.isNullOrEmpty()) {
             return ApiError.Server(statusCode, null, "Sem resposta do servidor")
@@ -169,20 +132,24 @@ class ApiClient internal constructor(
 
         runCatching { json.parseToJsonElement(text) as? JsonObject }
             .getOrNull()?.let { obj ->
-                val descricao = obj["descricao"]?.jsonPrimitiveOrNull()?.contentOrNull
+                val descricao = (obj["descricao"] as? JsonPrimitive)?.contentOrNull
                 if (descricao != null) {
-                    val codigo = obj["erro"]?.jsonPrimitiveOrNull()?.intOrNull ?: statusCode
+                    val codigo = (obj["erro"] as? JsonPrimitive)?.intOrNull ?: statusCode
                     return ApiError.Api(codigo, descricao)
                 }
-                obj["message"]?.jsonPrimitiveOrNull()?.contentOrNull?.let {
+                (obj["message"] as? JsonPrimitive)?.contentOrNull?.let {
                     return ApiError.Api(statusCode, it)
                 }
-                obj["error"]?.jsonPrimitiveOrNull()?.contentOrNull?.let {
+                (obj["error"] as? JsonPrimitive)?.contentOrNull?.let {
                     return ApiError.Api(statusCode, it)
                 }
             }
         return ApiError.Server(statusCode, null, "Erro ao processar requisição")
     }
+}
 
-    private fun JsonElement?.jsonPrimitiveOrNull(): JsonPrimitive? = (this as? JsonPrimitive)
+internal fun joinUrl(baseUrl: String, path: String): String {
+    val cleanBase = baseUrl.trimEnd('/')
+    val cleanPath = path.removePrefix("/")
+    return "$cleanBase/$cleanPath"
 }
