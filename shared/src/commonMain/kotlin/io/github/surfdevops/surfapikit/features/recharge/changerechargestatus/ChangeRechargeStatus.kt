@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class ChangeRechargeStatusRequest(
     val coRecarga: String,
@@ -41,6 +43,7 @@ internal object ChangeRechargeStatusEndpoint : Endpoint {
     override val method = HttpMethod.Put
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.changeRechargeStatus(request: ChangeRechargeStatusRequest): ChangeRechargeStatusSuccess =
     client.send(
         ChangeRechargeStatusEndpoint,

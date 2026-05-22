@@ -6,6 +6,8 @@ import io.github.surfdevops.surfapikit.features.schedule.Recurrence
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class UpdateBillingDayRequest(
@@ -24,6 +26,7 @@ internal data class UpdateBillingDayEndpoint(val recurrenceId: String) : Endpoin
     override val method = HttpMethod.Patch
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.updateBillingDay(
     request: UpdateBillingDayRequest,
     recurrenceId: String

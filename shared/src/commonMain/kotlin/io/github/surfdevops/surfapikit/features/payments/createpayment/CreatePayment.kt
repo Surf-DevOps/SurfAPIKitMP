@@ -5,6 +5,8 @@ import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 enum class PaymentType { @SerialName("CARD") CARD, @SerialName("PIX") PIX }
@@ -79,5 +81,6 @@ internal object CreatePaymentEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.createPayment(request: CreatePaymentRequest): CreatePaymentSuccess =
     client.send(CreatePaymentEndpoint, body = request)

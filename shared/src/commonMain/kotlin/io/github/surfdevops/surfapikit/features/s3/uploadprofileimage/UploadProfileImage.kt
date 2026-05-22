@@ -9,6 +9,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import kotlin.coroutines.cancellation.CancellationException
 
 data class UploadProfileImageRequest(val key: String)
 
@@ -32,11 +33,13 @@ internal object UploadProfileImageEndpoint : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.uploadProfileImage(request: UploadProfileImageRequest): UploadProfileImageResponse =
     client.send(UploadProfileImageEndpoint, query = mapOf("key" to request.key))
 
 private val rawHttp = HttpClient()
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.uploadImageToS3(url: String, imageData: ByteArray) {
     try {
         val response: HttpResponse = rawHttp.put(url) { setBody(imageData) }
@@ -48,6 +51,7 @@ suspend fun SurfApiKit.uploadImageToS3(url: String, imageData: ByteArray) {
     }
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.uploadProfileImageComplete(key: String, imageData: ByteArray) {
     val response = uploadProfileImage(UploadProfileImageRequest(key))
     val urlString = response.resultado?.url ?: throw ApiError.Unknown

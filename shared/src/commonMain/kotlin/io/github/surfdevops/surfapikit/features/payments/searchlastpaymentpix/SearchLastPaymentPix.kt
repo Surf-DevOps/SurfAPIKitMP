@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class SearchLastPaymentPixSuccess(
@@ -52,5 +54,6 @@ internal data class SearchLastPaymentPixEndpoint(val coMsisdn: String) : Endpoin
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.searchLastPaymentPix(coMsisdn: String): SearchLastPaymentPixSuccess =
     client.send(SearchLastPaymentPixEndpoint(coMsisdn))

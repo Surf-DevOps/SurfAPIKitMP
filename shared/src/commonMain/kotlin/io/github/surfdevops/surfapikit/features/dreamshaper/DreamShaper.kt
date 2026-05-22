@@ -5,6 +5,8 @@ import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class DreamShaperRequest(val nuDocumento: String)
 
@@ -19,5 +21,6 @@ internal data class DreamShaperEndpoint(val nuDocumento: String) : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getDSUrl(request: DreamShaperRequest): DreamShaperSuccess =
     client.send(DreamShaperEndpoint(request.nuDocumento))

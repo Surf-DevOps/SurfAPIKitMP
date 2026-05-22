@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class ConsultRechargeStatusRequest(val coRecarga: String)
 
@@ -36,5 +38,6 @@ internal object ConsultRechargeStatusEndpoint : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.consultRechargeStatus(request: ConsultRechargeStatusRequest): ConsultRechargeStatusSuccess =
     client.send(ConsultRechargeStatusEndpoint, query = mapOf("coRecarga" to request.coRecarga))

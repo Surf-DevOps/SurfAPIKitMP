@@ -4,9 +4,6 @@ import io.github.surfdevops.surfapikit.config.ApiEnvironment
 import io.github.surfdevops.surfapikit.core.ApiClient
 import io.github.surfdevops.surfapikit.core.TokenStore
 import io.github.surfdevops.surfapikit.core.createPlatformTokenStore
-import io.github.surfdevops.surfapikit.features.authentication.refreshtoken.RefreshTokenRequest
-import io.github.surfdevops.surfapikit.features.authentication.refreshtoken.refreshTokenInternal
-import io.ktor.client.plugins.auth.providers.BearerTokens
 import kotlin.concurrent.Volatile
 
 object SurfApiKit {
@@ -37,18 +34,6 @@ object SurfApiKit {
 
     private fun build(): ApiClient {
         val store = tokenStoreOverride ?: createPlatformTokenStore()
-        return ApiClient(
-            environment = environment,
-            tokenStore = store,
-            refreshHandler = { refresh ->
-                runCatching {
-                    val resp = SurfApiKit.refreshTokenInternal(RefreshTokenRequest(refreshToken = refresh))
-                    BearerTokens(
-                        accessToken = resp.resultado.accessToken,
-                        refreshToken = resp.resultado.refreshToken
-                    )
-                }.getOrNull()
-            }
-        )
+        return ApiClient(environment = environment, tokenStore = store)
     }
 }

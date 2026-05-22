@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class ListCardsSuccess(
@@ -33,5 +35,6 @@ internal data class ListCardsEndpoint(val coMsisdn: String) : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.listCards(coMsisdn: String): ListCardsSuccess =
     client.send(ListCardsEndpoint(coMsisdn))

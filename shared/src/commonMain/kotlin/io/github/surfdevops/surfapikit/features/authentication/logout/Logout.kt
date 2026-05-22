@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class LogoutSuccess(
@@ -16,4 +18,5 @@ internal object LogoutEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.logout(): LogoutSuccess = client.send(LogoutEndpoint)

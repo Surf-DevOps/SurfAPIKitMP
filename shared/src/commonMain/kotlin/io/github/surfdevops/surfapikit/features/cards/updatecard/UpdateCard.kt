@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class UpdateCardRequest(val isDefault: Boolean)
@@ -31,6 +33,7 @@ internal data class UpdateCardEndpoint(val coMsisdn: String, val cardId: String)
     override val method = HttpMethod.Patch
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.updateCard(
     request: UpdateCardRequest,
     coMsisdn: String,

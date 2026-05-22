@@ -12,6 +12,8 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class RefreshTokenRequest(val refreshToken: String)
@@ -60,5 +62,6 @@ internal suspend fun SurfApiKit.refreshTokenInternal(request: RefreshTokenReques
     return result
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.refreshToken(request: RefreshTokenRequest): RefreshTokenSuccess =
     refreshTokenInternal(request)

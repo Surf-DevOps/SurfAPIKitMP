@@ -9,6 +9,7 @@ import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import kotlin.coroutines.cancellation.CancellationException
 
 data class DownloadImageProfileRequest(val key: String, val values: String)
 
@@ -35,11 +36,13 @@ internal object DownloadImageProfileEndpoint : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.downloadImageProfile(request: DownloadImageProfileRequest): DownloadImageProfileResponse =
     client.send(DownloadImageProfileEndpoint, query = mapOf("key" to request.key, "values" to request.values))
 
 private val rawHttp = HttpClient()
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.downloadImageFromS3(url: String): ByteArray = try {
     val response: HttpResponse = rawHttp.get(url)
     if (response.status.value >= 400) throw ApiError.Server(response.status.value)

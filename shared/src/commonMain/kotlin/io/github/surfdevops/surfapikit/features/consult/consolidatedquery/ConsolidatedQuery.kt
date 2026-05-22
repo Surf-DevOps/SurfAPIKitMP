@@ -5,6 +5,8 @@ import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class ConsolidatedQueryRequest(val nuMsisdn: String)
 
@@ -76,5 +78,6 @@ internal object ConsolidatedQueryEndpoint : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.consolidatedQuery(request: ConsolidatedQueryRequest): ConsolidatedQuerySuccess =
     client.send(ConsolidatedQueryEndpoint, query = mapOf("nuMsisdn" to request.nuMsisdn))

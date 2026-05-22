@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class ResetPasswordRequest(
     val documentId: String,
@@ -29,6 +31,7 @@ internal data class ResetPasswordEndpoint(val documentId: String) : Endpoint {
     override val method = HttpMethod.Patch
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.resetPassword(request: ResetPasswordRequest): ResetPasswordSuccess =
     client.send(
         ResetPasswordEndpoint(request.documentId),

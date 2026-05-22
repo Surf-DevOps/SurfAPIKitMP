@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class GetCustomerRequest(val coMsisdn: String)
 
@@ -53,5 +55,6 @@ internal data class GetCustomerEndpoint(val coMsisdn: String) : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getCustomer(request: GetCustomerRequest): GetCustomerSuccess =
     client.send(GetCustomerEndpoint(request.coMsisdn))

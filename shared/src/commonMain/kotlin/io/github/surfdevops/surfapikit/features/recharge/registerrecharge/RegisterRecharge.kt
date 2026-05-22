@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class RegisterRechargeRequest(val nuMsisdn: String, val nuPlano: String)
@@ -37,5 +39,6 @@ internal object RegisterRechargeEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.registerRecharge(request: RegisterRechargeRequest): RegisterRechargeSuccess =
     client.send(RegisterRechargeEndpoint, body = request)

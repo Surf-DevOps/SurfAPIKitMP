@@ -15,24 +15,41 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpMethod
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 
+internal const val REFRESH_PATH = "spec-mobile/v2/auth/refresh"
+
 class ApiClient internal constructor(
     val environment: ApiEnvironment,
-    val tokenStore: TokenStore,
-    private val refreshHandler: suspend (refreshToken: String) -> BearerTokens?
+    val tokenStore: TokenStore
 ) {
 
     internal val json: Json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
         isLenient = true
+    }
+
+    // Bare HTTP client used exclusively for the refresh-token endpoint.
+    // Keeping it free of the Auth plugin prevents loadTokens/refreshTokens
+    // from re-entering themselves when this SDK refreshes its own tokens.
+    internal val refreshHttp: HttpClient = HttpClient {
+        expectSuccess = false
+        install(HttpTimeout) {
+            requestTimeoutMillis = 905_000
+            connectTimeoutMillis = 905_000
+            socketTimeoutMillis = 905_000
+        }
+        install(ContentNegotiation) {
+            json(json)
+        }
     }
 
     val http: HttpClient = HttpClient {
@@ -53,17 +70,45 @@ class ApiClient internal constructor(
                 loadTokens {
                     val access = tokenStore.accessToken
                     val refresh = tokenStore.refreshToken
-                    if (!access.isNullOrEmpty()) {
-                        BearerTokens(access, refresh ?: "")
-                    } else null
+                    when {
+                        !access.isNullOrEmpty() -> BearerTokens(access, refresh.orEmpty())
+                        !refresh.isNullOrEmpty() -> refreshTokensNow(refresh)
+                        else -> null
+                    }
                 }
                 refreshTokens {
                     val refresh = tokenStore.refreshToken ?: return@refreshTokens null
-                    refreshHandler(refresh)
+                    refreshTokensNow(refresh)
                 }
                 sendWithoutRequest { true }
             }
         }
+    }
+
+    internal suspend fun refreshTokensNow(refreshToken: String): BearerTokens? {
+        val response: HttpResponse = runCatching {
+            refreshHttp.request {
+                method = HttpMethod.Post
+                url(joinUrl(environment.baseUrl, REFRESH_PATH))
+                headers {
+                    append("Content-Type", "application/json")
+                    append("Accept", "application/json")
+                }
+                setBody(RefreshRequestDto(refreshToken))
+            }
+        }.getOrElse { return null }
+
+        if (response.status.value >= 400) {
+            tokenStore.clear()
+            return null
+        }
+        return runCatching {
+            val parsed: RefreshResponseDto = response.body()
+            tokenStore.accessToken = parsed.resultado.accessToken
+            tokenStore.refreshToken = parsed.resultado.refreshToken
+            if (tokenStore.tokenType.isNullOrEmpty()) tokenStore.tokenType = "Bearer"
+            BearerTokens(parsed.resultado.accessToken, parsed.resultado.refreshToken)
+        }.getOrNull()
     }
 
     fun clearTokens() = tokenStore.clear()
@@ -152,4 +197,13 @@ internal fun joinUrl(baseUrl: String, path: String): String {
     val cleanBase = baseUrl.trimEnd('/')
     val cleanPath = path.removePrefix("/")
     return "$cleanBase/$cleanPath"
+}
+
+@Serializable
+private data class RefreshRequestDto(val refreshToken: String)
+
+@Serializable
+private data class RefreshResponseDto(val resultado: Resultado) {
+    @Serializable
+    data class Resultado(val accessToken: String, val refreshToken: String)
 }

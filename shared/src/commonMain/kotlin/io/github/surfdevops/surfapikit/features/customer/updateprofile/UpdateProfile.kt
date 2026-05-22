@@ -5,6 +5,8 @@ import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class UpdateProfileRequest(
@@ -69,5 +71,6 @@ internal data class UpdateProfileEndpoint(val customerID: String) : Endpoint {
     override val method = HttpMethod.Patch
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.updateProfile(request: UpdateProfileRequest): UpdateProfileSuccess =
     client.send(UpdateProfileEndpoint(request.customerID), body = request)

@@ -5,6 +5,8 @@ import io.github.surfdevops.surfapikit.core.Endpoint
 import io.github.surfdevops.surfapikit.platform.AppInfo
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class VersionVerifySuccess(
@@ -32,5 +34,6 @@ internal data class VersionVerifyEndpoint(val coMvno: String) : Endpoint {
     )
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getVersionVerify(coMvno: String): VersionVerifySuccess =
     client.send(VersionVerifyEndpoint(coMvno))

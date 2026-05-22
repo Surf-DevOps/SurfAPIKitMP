@@ -6,6 +6,8 @@ import io.ktor.http.HttpMethod
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class CreateCustomerRequest(
@@ -57,6 +59,7 @@ internal object CreateCustomerEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.createCustomer(request: CreateCustomerRequest): CreateCustomerSuccess {
     val response: CreateCustomerSuccess = client.send(CreateCustomerEndpoint, body = request)
     tokenStore.accessToken = response.resultado.accessToken

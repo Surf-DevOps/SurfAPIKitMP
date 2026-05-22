@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class SelectLineRequest(val nuMsisdn: String)
@@ -32,6 +34,7 @@ internal object SelectLineEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.selectLine(request: SelectLineRequest): SelectLineSuccess {
     val response: SelectLineSuccess = client.send(SelectLineEndpoint, body = request)
     tokenStore.accessToken = response.resultado.accessToken

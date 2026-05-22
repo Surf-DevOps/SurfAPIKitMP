@@ -4,6 +4,8 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
 
 data class PreSignedUploadRequest(val key: String)
 
@@ -48,9 +50,11 @@ internal object PreSignedDownloadListEndpoint : Endpoint {
     override val method = HttpMethod.Get
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getPresignedUploadUrl(request: PreSignedUploadRequest): PreSignedUploadSuccess =
     client.send(PreSignedUploadEndpoint, query = mapOf("key" to request.key))
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getPresignedDownloadList(
     mvno: String,
     number: Int? = null,
@@ -64,6 +68,7 @@ suspend fun SurfApiKit.getPresignedDownloadList(
     )
 }
 
+@Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getPresignedDownloadNewList(
     mvno: String,
     number: Int? = null,
