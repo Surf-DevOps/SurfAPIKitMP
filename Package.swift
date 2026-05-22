@@ -13,8 +13,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "SurfAPIKit",
-            url: "https://github.com/Surf-DevOps/SurfAPIKitMP/releases/download/v1.0.2/SurfAPIKit.xcframework.zip",
-            checksum: "3f85d17f89f77a9dcb9dc5fd5a0c1bbcc512a9c41cec81290a22b2d075c4b014"
+            url: "https://github.com/Surf-DevOps/SurfAPIKitMP/releases/download/v1.0.3/SurfAPIKit.xcframework.zip",
+            checksum: "8303b7cd9008b4e9b940a3e0e4595f224783ab93174b70886871883b1e61d1da"
         )
     ]
 )
