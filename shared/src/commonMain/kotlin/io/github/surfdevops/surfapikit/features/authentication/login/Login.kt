@@ -45,6 +45,9 @@ internal object LoginEndpoint : Endpoint {
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.login(request: LoginRequest): LoginSuccess {
     val response: LoginSuccess = client.send(LoginEndpoint, body = request)
+    // The native iOS SDK stores the selectionToken in tokenStore.accessToken so the auth
+    // header on the subsequent selectLine call uses it as Bearer. We mirror that behavior.
+    tokenStore.accessToken = response.resultado.selectionToken
     tokenStore.selectionToken = response.resultado.selectionToken
     tokenStore.tokenType = response.resultado.tokenType
     return response

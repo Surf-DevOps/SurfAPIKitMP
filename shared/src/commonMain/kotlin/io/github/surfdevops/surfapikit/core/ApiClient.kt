@@ -4,10 +4,9 @@ import io.github.surfdevops.surfapikit.config.ApiEnvironment
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.request
@@ -37,9 +36,8 @@ class ApiClient internal constructor(
         isLenient = true
     }
 
-    // Bare HTTP client used exclusively for the refresh-token endpoint.
-    // Keeping it free of the Auth plugin prevents loadTokens/refreshTokens
-    // from re-entering themselves when this SDK refreshes its own tokens.
+    // Bare HTTP client used exclusively for the refresh-token endpoint, so the refresh
+    // request itself is not affected by the auth-injecting defaultRequest below.
     internal val refreshHttp: HttpClient = HttpClient {
         expectSuccess = false
         install(HttpTimeout) {
@@ -65,27 +63,21 @@ class ApiClient internal constructor(
             json(json)
         }
 
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    val access = tokenStore.accessToken
-                    val refresh = tokenStore.refreshToken
-                    when {
-                        !access.isNullOrEmpty() -> BearerTokens(access, refresh.orEmpty())
-                        !refresh.isNullOrEmpty() -> refreshTokensNow(refresh)
-                        else -> null
-                    }
-                }
-                refreshTokens {
-                    val refresh = tokenStore.refreshToken ?: return@refreshTokens null
-                    refreshTokensNow(refresh)
-                }
-                sendWithoutRequest { true }
+        // Authorization is read from tokenStore on every request (no caching), matching the
+        // behavior of the native iOS SDK's AuthInterceptor. Token rotations (login →
+        // selectLine, refresh, etc.) take effect on the very next request.
+        defaultRequest {
+            val token = tokenStore.accessToken
+            if (!token.isNullOrEmpty()) {
+                val type = tokenStore.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
+                header("Authorization", "$type $token")
             }
         }
     }
 
-    internal suspend fun refreshTokensNow(refreshToken: String): BearerTokens? {
+    fun clearTokens() = tokenStore.clear()
+
+    internal suspend fun refreshTokensNow(refreshToken: String): BearerTokensLite? {
         val response: HttpResponse = runCatching {
             refreshHttp.request {
                 method = HttpMethod.Post
@@ -107,11 +99,9 @@ class ApiClient internal constructor(
             tokenStore.accessToken = parsed.resultado.accessToken
             tokenStore.refreshToken = parsed.resultado.refreshToken
             if (tokenStore.tokenType.isNullOrEmpty()) tokenStore.tokenType = "Bearer"
-            BearerTokens(parsed.resultado.accessToken, parsed.resultado.refreshToken)
+            BearerTokensLite(parsed.resultado.accessToken, parsed.resultado.refreshToken)
         }.getOrNull()
     }
-
-    fun clearTokens() = tokenStore.clear()
 
     suspend inline fun <reified T> send(
         endpoint: Endpoint,
@@ -134,56 +124,6 @@ class ApiClient internal constructor(
         query: Map<String, Any?>? = null
     ) {
         execute(endpoint, body, query, allowEmpty = true)
-    }
-
-    // Used for endpoints that require a token other than the cached BearerTokens of the
-    // Auth plugin — namely the line-selection flow, which authenticates via the temporary
-    // selectionToken returned by /auth/login.
-    suspend inline fun <reified T> sendWithToken(
-        endpoint: Endpoint,
-        authToken: String,
-        body: Any? = null,
-        query: Map<String, Any?>? = null
-    ): T {
-        val response = executeWithToken(endpoint, authToken, body, query)
-        return try {
-            response.body()
-        } catch (e: ApiError) {
-            throw e
-        } catch (e: Throwable) {
-            throw ApiError.Decoding(e)
-        }
-    }
-
-    @PublishedApi
-    internal suspend fun executeWithToken(
-        endpoint: Endpoint,
-        authToken: String,
-        body: Any?,
-        query: Map<String, Any?>?
-    ): HttpResponse {
-        val response: HttpResponse = try {
-            refreshHttp.request {
-                method = endpoint.method
-                url(joinUrl(environment.baseUrl, endpoint.path))
-                headers {
-                    endpoint.headers.forEach { (k, v) -> append(k, v) }
-                    append("Authorization", "Bearer $authToken")
-                }
-                query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
-                if (body != null) setBody(body)
-            }
-        } catch (e: ApiError) {
-            throw e
-        } catch (e: Throwable) {
-            throw ApiError.Transport(e)
-        }
-        val status = response.status.value
-        if (status >= 400) {
-            val text = runCatching { response.bodyAsText() }.getOrNull()
-            throw parseApiError(text, status)
-        }
-        return response
     }
 
     @PublishedApi
@@ -215,23 +155,21 @@ class ApiClient internal constructor(
         val text = runCatching { response.bodyAsText() }.getOrNull()
         val err = parseApiError(text, status)
 
-        // Some servers (this API included) return 4xx with `erro=6` "Token é um parametro
-        // obrigatório" instead of 401 for expired/missing access tokens. Ktor's bearer plugin
-        // only triggers refreshTokens on 401, so we explicitly refresh + retry once here.
-        val canRefreshRetry = err is ApiError.Api && err.code == 6 &&
-            !tokenStore.refreshToken.isNullOrEmpty()
+        // Auto-refresh + retry once when the server signals an invalid/missing access token.
+        // Triggered on HTTP 401 OR on the API-specific `erro=6` ("Token é um parametro obrigatório"),
+        // which this API returns as 4xx without 401 status.
+        val isAuthError = status == 401 || (err is ApiError.Api && err.code == 6)
+        val canRefreshRetry = isAuthError && !tokenStore.refreshToken.isNullOrEmpty()
         if (!canRefreshRetry) throw err
 
         refreshTokensNow(tokenStore.refreshToken!!) ?: throw err
-        val freshAccess = tokenStore.accessToken ?: throw err
-        // Retry through the bare client so we bypass Ktor's cached BearerTokens.
+
         val retry: HttpResponse = try {
-            refreshHttp.request {
+            http.request {
                 method = endpoint.method
                 url(joinUrl(environment.baseUrl, endpoint.path))
                 headers {
                     endpoint.headers.forEach { (k, v) -> append(k, v) }
-                    append("Authorization", "Bearer $freshAccess")
                 }
                 query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
                 if (body != null) setBody(body)
@@ -277,6 +215,8 @@ internal fun joinUrl(baseUrl: String, path: String): String {
     val cleanPath = path.removePrefix("/")
     return "$cleanBase/$cleanPath"
 }
+
+internal data class BearerTokensLite(val accessToken: String, val refreshToken: String)
 
 @Serializable
 private data class RefreshRequestDto(val refreshToken: String)
