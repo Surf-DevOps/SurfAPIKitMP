@@ -160,11 +160,40 @@ class ApiClient internal constructor(
         }
 
         val status = response.status.value
-        if (status >= 400) {
-            val text = runCatching { response.bodyAsText() }.getOrNull()
-            throw parseApiError(text, status)
+        if (status < 400) return response
+
+        val text = runCatching { response.bodyAsText() }.getOrNull()
+        val err = parseApiError(text, status)
+
+        // Some servers (this API included) return 4xx with `erro=6` "Token é um parametro
+        // obrigatório" instead of 401 for expired/missing access tokens. Ktor's bearer plugin
+        // only triggers refreshTokens on 401, so we explicitly refresh + retry once here.
+        val canRefreshRetry = err is ApiError.Api && err.code == 6 &&
+            !tokenStore.refreshToken.isNullOrEmpty()
+        if (!canRefreshRetry) throw err
+
+        refreshTokensNow(tokenStore.refreshToken!!) ?: throw err
+        val freshAccess = tokenStore.accessToken ?: throw err
+        // Retry through the bare client so we bypass Ktor's cached BearerTokens.
+        val retry: HttpResponse = try {
+            refreshHttp.request {
+                method = endpoint.method
+                url(joinUrl(environment.baseUrl, endpoint.path))
+                headers {
+                    endpoint.headers.forEach { (k, v) -> append(k, v) }
+                    append("Authorization", "Bearer $freshAccess")
+                }
+                query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
+                if (body != null) setBody(body)
+            }
+        } catch (e: ApiError) {
+            throw e
+        } catch (e: Throwable) {
+            throw ApiError.Transport(e)
         }
-        return response
+        if (retry.status.value < 400) return retry
+        val retryText = runCatching { retry.bodyAsText() }.getOrNull()
+        throw parseApiError(retryText, retry.status.value)
     }
 
     private fun parseApiError(text: String?, statusCode: Int): ApiError {
