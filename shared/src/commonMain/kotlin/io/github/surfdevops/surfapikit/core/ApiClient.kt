@@ -5,8 +5,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.request.header
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.request
@@ -62,16 +61,16 @@ class ApiClient internal constructor(
         install(ContentNegotiation) {
             json(json)
         }
+    }
 
-        // Authorization is read from tokenStore on every request (no caching), matching the
-        // behavior of the native iOS SDK's AuthInterceptor. Token rotations (login →
-        // selectLine, refresh, etc.) take effect on the very next request.
-        defaultRequest {
-            val token = tokenStore.accessToken
-            if (!token.isNullOrEmpty()) {
-                val type = tokenStore.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
-                header("Authorization", "$type $token")
-            }
+    // Mirrors the native iOS SDK's AuthInterceptor.adapt — runs per request, so updates
+    // to tokenStore (login → selectLine → refresh) propagate immediately.
+    private fun HttpRequestBuilder.applyAuth() {
+        val token = tokenStore.accessToken
+        if (!token.isNullOrEmpty()) {
+            val type = tokenStore.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
+            headers.remove("Authorization")
+            headers.append("Authorization", "$type $token")
         }
     }
 
@@ -140,6 +139,7 @@ class ApiClient internal constructor(
                 headers {
                     endpoint.headers.forEach { (k, v) -> append(k, v) }
                 }
+                applyAuth()
                 query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
                 if (body != null) setBody(body)
             }
@@ -156,8 +156,7 @@ class ApiClient internal constructor(
         val err = parseApiError(text, status)
 
         // Auto-refresh + retry once when the server signals an invalid/missing access token.
-        // Triggered on HTTP 401 OR on the API-specific `erro=6` ("Token é um parametro obrigatório"),
-        // which this API returns as 4xx without 401 status.
+        // Triggered on HTTP 401 OR on the API-specific `erro=6` ("Token é um parametro obrigatório").
         val isAuthError = status == 401 || (err is ApiError.Api && err.code == 6)
         val canRefreshRetry = isAuthError && !tokenStore.refreshToken.isNullOrEmpty()
         if (!canRefreshRetry) throw err
@@ -171,6 +170,7 @@ class ApiClient internal constructor(
                 headers {
                     endpoint.headers.forEach { (k, v) -> append(k, v) }
                 }
+                applyAuth()
                 query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
                 if (body != null) setBody(body)
             }
