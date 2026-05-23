@@ -136,6 +136,56 @@ class ApiClient internal constructor(
         execute(endpoint, body, query, allowEmpty = true)
     }
 
+    // Used for endpoints that require a token other than the cached BearerTokens of the
+    // Auth plugin — namely the line-selection flow, which authenticates via the temporary
+    // selectionToken returned by /auth/login.
+    suspend inline fun <reified T> sendWithToken(
+        endpoint: Endpoint,
+        authToken: String,
+        body: Any? = null,
+        query: Map<String, Any?>? = null
+    ): T {
+        val response = executeWithToken(endpoint, authToken, body, query)
+        return try {
+            response.body()
+        } catch (e: ApiError) {
+            throw e
+        } catch (e: Throwable) {
+            throw ApiError.Decoding(e)
+        }
+    }
+
+    @PublishedApi
+    internal suspend fun executeWithToken(
+        endpoint: Endpoint,
+        authToken: String,
+        body: Any?,
+        query: Map<String, Any?>?
+    ): HttpResponse {
+        val response: HttpResponse = try {
+            refreshHttp.request {
+                method = endpoint.method
+                url(joinUrl(environment.baseUrl, endpoint.path))
+                headers {
+                    endpoint.headers.forEach { (k, v) -> append(k, v) }
+                    append("Authorization", "Bearer $authToken")
+                }
+                query?.forEach { (k, v) -> if (v != null) parameter(k, v) }
+                if (body != null) setBody(body)
+            }
+        } catch (e: ApiError) {
+            throw e
+        } catch (e: Throwable) {
+            throw ApiError.Transport(e)
+        }
+        val status = response.status.value
+        if (status >= 400) {
+            val text = runCatching { response.bodyAsText() }.getOrNull()
+            throw parseApiError(text, status)
+        }
+        return response
+    }
+
     @PublishedApi
     internal suspend fun execute(
         endpoint: Endpoint,

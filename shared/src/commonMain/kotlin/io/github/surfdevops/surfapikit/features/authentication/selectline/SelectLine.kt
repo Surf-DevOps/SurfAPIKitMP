@@ -36,9 +36,12 @@ internal object SelectLineEndpoint : Endpoint {
 
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.selectLine(request: SelectLineRequest): SelectLineSuccess {
-    val response: SelectLineSuccess = client.send(SelectLineEndpoint, body = request)
+    val selection = tokenStore.selectionToken
+        ?: throw ApiError.InvalidRequest("selectionToken ausente — faça login antes de selecionar a linha")
+    val response: SelectLineSuccess = client.sendWithToken(SelectLineEndpoint, selection, body = request)
     tokenStore.accessToken = response.resultado.accessToken
     tokenStore.tokenType = response.resultado.tokenType
     tokenStore.refreshToken = response.resultado.refreshToken
+    tokenStore.selectionToken = null
     return response
 }
