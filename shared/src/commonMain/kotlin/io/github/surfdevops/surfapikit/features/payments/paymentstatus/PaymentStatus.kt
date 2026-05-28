@@ -66,6 +66,14 @@ fun SurfApiKit.statusStream(paymentId: String): Flow<PaymentStatusStreamResult> 
         url(fullUrl)
         headers {
             endpoint.headers.forEach { (k, v) -> append(k, v) }
+            append("Connection", "keep-alive")
+            // O AuthInterceptor não roda em streams (mesmo motivo do iOS em
+            // PaymentStatusEndpoint.swift), então injeta o token manualmente aqui.
+            val accessToken = client.tokenStore.accessToken
+            if (!accessToken.isNullOrEmpty()) {
+                val tokenType = client.tokenStore.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
+                append("Authorization", "$tokenType $accessToken")
+            }
         }
     }.execute { response ->
         if (response.status.value >= 400) {
