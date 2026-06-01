@@ -23,12 +23,15 @@ data class ValidateCodeSuccess(
     data class ResultadoToken(
         val nuMsisdn: String,
         val accessToken: String,
-        val dtExpiracao: String
+        val dtExpiracao: String,
+        val refreshToken: String? = null,
+        val dtExpiracaoRefresh: String? = null,
+        val tokenType: String? = null
     )
 }
 
 internal object ValidateCodeEndpoint : Endpoint {
-    override val path = "spec-mobile/v1/auth/validate-code"
+    override val path = "spec-mobile/v2/auth/validate-code"
     override val method = HttpMethod.Post
 }
 
@@ -37,7 +40,8 @@ suspend fun SurfApiKit.validateCode(request: ValidateCodeRequest): ValidateCodeS
     val response: ValidateCodeSuccess = client.send(ValidateCodeEndpoint, body = request)
     response.resultado?.let { res ->
         tokenStore.accessToken = res.accessToken
-        tokenStore.tokenType = "Bearer"
+        res.refreshToken?.let { tokenStore.refreshToken = it }
+        tokenStore.tokenType = res.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
     }
     return response
 }

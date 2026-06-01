@@ -26,7 +26,9 @@ data class ConsolidatedQuerySuccess(
         val nuDocumento: String,
         @SerialName("detalhe_consumo") val detalheConsumo: DetalheConsumo? = null,
         @SerialName("detalhe_plano") val detalhePlano: DetalhePlano,
-        val pixAutomatico: PixAutomatico? = null
+        val pixAutomatico: PixAutomatico? = null,
+        val compreGanhe: CompreGanhe? = null,
+        val mandouGanhou: MandouGanhou? = null
     )
 
     @Serializable
@@ -56,7 +58,10 @@ data class ConsolidatedQuerySuccess(
         val planoRecorrencia: String? = null,
         val dadoRecorrencia: Int? = null,
         val vozRecorrencia: Int? = null,
-        val smsRecorrencia: Int? = null
+        val smsRecorrencia: Int? = null,
+        val nuPlanoRecargaRapida: String? = null,
+        val noPlanoRecargaRapida: String? = null,
+        val valorPlanoRecargaRapida: Double? = null
     )
 
     @Serializable
@@ -67,6 +72,20 @@ data class ConsolidatedQuerySuccess(
     )
 
     @Serializable
+    data class CompreGanhe(
+        val disponivel: Boolean? = null,
+        val podeEscanear: Boolean? = null,
+        val podeResgatar: Boolean? = null
+    )
+
+    @Serializable
+    data class MandouGanhou(
+        val disponivel: Boolean? = null,
+        val podeResgatarLoterica: Boolean? = null,
+        val podeResgatarCorreios: Boolean? = null
+    )
+
+    @Serializable
     data class TransactionInfo(
         val localTransactionId: String,
         val localTransactionDate: String
@@ -74,7 +93,7 @@ data class ConsolidatedQuerySuccess(
 }
 
 internal object ConsolidatedQueryEndpoint : Endpoint {
-    override val path = "spec-mobile/v1/consumer/consulta-consolidada"
+    override val path = "spec-mobile/v2/consumer/consulta-consolidada"
     override val method = HttpMethod.Get
 }
 

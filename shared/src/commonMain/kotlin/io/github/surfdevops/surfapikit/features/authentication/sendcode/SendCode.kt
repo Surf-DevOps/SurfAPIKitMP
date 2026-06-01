@@ -21,7 +21,7 @@ data class SendCodeSuccess(
 }
 
 internal object SendCodeEndpoint : Endpoint {
-    override val path = "spec-mobile/v1/auth/generate-code"
+    override val path = "spec-mobile/v2/auth/generate-code"
     override val method = HttpMethod.Post
 }
 

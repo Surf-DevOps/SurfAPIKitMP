@@ -21,7 +21,7 @@ data class ResendCodeSuccess(
 }
 
 internal object ResendCodeEndpoint : Endpoint {
-    override val path = "spec-mobile/v1/auth/resend-code"
+    override val path = "spec-mobile/v2/auth/resend-code"
     override val method = HttpMethod.Post
 }
 

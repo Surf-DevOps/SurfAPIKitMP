@@ -50,7 +50,7 @@ data class SearchLastPaymentPixSuccess(
 }
 
 internal data class SearchLastPaymentPixEndpoint(val coMsisdn: String) : Endpoint {
-    override val path: String = "spec-mobilev1/payments/pix/pending/by-co-msisdn/$coMsisdn"
+    override val path: String = "spec-mobile/v1/payments/pix/pending/by-co-msisdn/$coMsisdn"
     override val method = HttpMethod.Get
 }
 

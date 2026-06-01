@@ -55,14 +55,18 @@ data class CreatePaymentSuccess(
         val productId: String,
         val msisdn: String,
         val isRecurring: Boolean,
-        val sourceId: String,
+        val sourceId: String? = null,
         val qrCode: String? = null,
         val qrCodeUrl: String? = null,
         val pixKey: String? = null,
         val noPlano: String? = null,
         val expiresAt: String? = null,
         val expiresInSeconds: Int? = null,
-        val createdAt: String
+        val createdAt: String,
+        // v2 (POST /v2/payments): presentes apenas quando há recorrência
+        val recurrenceId: String? = null,
+        val qrCodeComposto: String? = null,
+        val idRec: String? = null
     ) {
         val isPixPayment: Boolean get() = paymentType == "PIX"
         val isCardPayment: Boolean get() = paymentType == "CARD"
@@ -77,7 +81,7 @@ data class CreatePaymentSuccess(
 }
 
 internal object CreatePaymentEndpoint : Endpoint {
-    override val path = "spec-mobile/v1/payments"
+    override val path = "spec-mobile/v2/payments"
     override val method = HttpMethod.Post
 }
 

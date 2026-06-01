@@ -67,7 +67,7 @@ data class UpdateProfileSuccess(
 }
 
 internal data class UpdateProfileEndpoint(val customerID: String) : Endpoint {
-    override val path: String = "spec-mobile/v1/customer/update-customer/$customerID"
+    override val path: String = "spec-mobile/v2/customer/update-customer/$customerID"
     override val method = HttpMethod.Patch
 }
 

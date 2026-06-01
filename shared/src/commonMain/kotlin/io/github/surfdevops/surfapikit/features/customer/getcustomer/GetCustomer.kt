@@ -51,7 +51,7 @@ data class GetCustomerSuccess(
 }
 
 internal data class GetCustomerEndpoint(val coMsisdn: String) : Endpoint {
-    override val path: String = "spec-mobile/v1/customer/get-customer/$coMsisdn"
+    override val path: String = "spec-mobile/v2/customer/get-customer/$coMsisdn"
     override val method = HttpMethod.Get
 }
 

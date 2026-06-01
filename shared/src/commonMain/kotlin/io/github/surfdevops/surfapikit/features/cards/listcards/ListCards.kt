@@ -4,6 +4,7 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.ktor.http.HttpMethod
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 import io.github.surfdevops.surfapikit.core.ApiError
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -11,7 +12,8 @@ import kotlin.coroutines.cancellation.CancellationException
 data class ListCardsSuccess(
     val status: Int,
     val message: String,
-    val content: List<Card>? = null
+    val content: List<Card>? = null,
+    val transaction: ListCardsTransaction? = null
 )
 
 @Serializable
@@ -27,11 +29,18 @@ data class Card(
     val flag: String? = null,
     val paymentType: String? = null,
     val createdAt: String,
-    val updatedAt: String
+    val updatedAt: String,
+    val recurrence: JsonElement? = null
+)
+
+@Serializable
+data class ListCardsTransaction(
+    val globalTransactionId: String? = null,
+    val localTransactionId: String? = null
 )
 
 internal data class ListCardsEndpoint(val coMsisdn: String) : Endpoint {
-    override val path: String = "spec-mobile/v1/cards/customers/$coMsisdn/cards"
+    override val path: String = "spec-mobile/v2/cards/customers/$coMsisdn/cards"
     override val method = HttpMethod.Get
 }
 

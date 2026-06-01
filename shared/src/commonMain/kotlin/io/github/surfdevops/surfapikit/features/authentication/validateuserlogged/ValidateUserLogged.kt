@@ -57,11 +57,11 @@ data class ValidateUserLoggedSuccess(
     )
 }
 
-internal object ValidateUserLoggedEndpoint : Endpoint {
-    override val path = "spec-mobile/v2/auth/validate/40199907"
+internal data class ValidateUserLoggedEndpoint(val nuMsisdn: String) : Endpoint {
+    override val path: String = "spec-mobile/v2/auth/validate/$nuMsisdn"
     override val method = HttpMethod.Get
 }
 
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.validateUserLogged(request: ValidateUserLoggedRequest): ValidateUserLoggedSuccess =
-    client.send(ValidateUserLoggedEndpoint, query = mapOf("nuMsisdn" to request.nuMsisdn))
+    client.send(ValidateUserLoggedEndpoint(request.nuMsisdn), query = mapOf("nuMsisdn" to request.nuMsisdn))

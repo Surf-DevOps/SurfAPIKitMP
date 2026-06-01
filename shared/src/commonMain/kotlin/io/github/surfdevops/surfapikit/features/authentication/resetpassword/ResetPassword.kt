@@ -27,7 +27,7 @@ data class ResetPasswordSuccess(
 )
 
 internal data class ResetPasswordEndpoint(val documentId: String) : Endpoint {
-    override val path: String = "spec-mobile/v1/customer/reset-password/$documentId"
+    override val path: String = "spec-mobile/v2/customer/reset-password/$documentId"
     override val method = HttpMethod.Patch
 }
 
