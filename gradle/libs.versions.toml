@@ -4,7 +4,6 @@ agp = "8.5.2"
 ktor = "3.0.1"
 coroutines = "1.9.0"
 serialization = "1.7.3"
-skie = "0.10.4"
 androidxSecurity = "1.1.0-alpha06"
 androidxStartup = "1.2.0"
 androidxCore = "1.13.1"
@@ -23,7 +22,6 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
-ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidxSecurity" }
 androidx-startup-runtime = { module = "androidx.startup:startup-runtime", version.ref = "androidxStartup" }
@@ -31,7 +29,6 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playLocation" }
 
 [plugins]
-kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
+kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-skie = { id = "co.touchlab.skie", version.ref = "skie" }

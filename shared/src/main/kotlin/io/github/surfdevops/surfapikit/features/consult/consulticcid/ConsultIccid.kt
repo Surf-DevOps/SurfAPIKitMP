@@ -1,0 +1,81 @@
+package io.github.surfdevops.surfapikit.features.consult.consulticcid
+
+import io.github.surfdevops.surfapikit.SurfApiKit
+import io.github.surfdevops.surfapikit.core.Endpoint
+import io.ktor.http.HttpMethod
+import kotlinx.serialization.Serializable
+import io.github.surfdevops.surfapikit.core.ApiError
+import kotlin.coroutines.cancellation.CancellationException
+
+data class ConsultIccidRequest(val nuIccid: String)
+
+@Serializable
+data class ConsultIccidSuccess(
+    val sucesso: Int,
+    val nuTransacao: String,
+    val mensagem: String,
+    val resultado: LineDetail? = null,
+    val transaction: TransactionInfo? = null
+) {
+    @Serializable
+    data class LineDetail(
+        val coMsisdn: Long? = null,
+        val stPortin: Int? = null,
+        val vlSaldo: Double? = null,
+        val dtAtivacao: String? = null,
+        val nuIccid: String? = null,
+        val nuImsi: Long? = null,
+        val dtPortin: String? = null,
+        val dtPortout: String? = null,
+        val nuDocumento: String? = null,
+        val dsObservacao: String? = null,
+        val noMsisdnStatus: String? = null,
+        val noMvno: String? = null,
+        val noSubmvno: String? = null,
+        val nuMsisdn: Long? = null,
+        val noPlano: String? = null,
+        val qtDadoRestante: Int? = null,
+        val qtMinutoRestante: Int? = null,
+        val dtValidade: String? = null,
+        val dtPlanoExpira: String? = null,
+        val stBloqueioVozOriginada: Int? = null,
+        val stBloqueioSmsOriginado: Int? = null,
+        val stBloqueioDado: Int? = null,
+        val dtUltimaRecarga: String? = null,
+        val coMvno: Int? = null,
+        val coSubmvno: Int? = null,
+        val coPlano: Int? = null,
+        val stBloqueioConsumo: Int? = null,
+        val stBloqueioChip: Int? = null,
+        val qtSmsRestante: Int? = null,
+        val stBloqueioVozTerminada: Int? = null,
+        val dtBloqueioVozTerminada: String? = null,
+        val stInadimplencia: Int? = null,
+        val noUsuario: String? = null,
+        val stBlackFriday: Int? = null,
+        val nuPin1: String? = null,
+        val nuPuk1: String? = null,
+        val nuPin2: String? = null,
+        val nuPuk2: String? = null,
+        val qtConsumoDado: Int? = null,
+        val qtConsumoVoz: Int? = null,
+        val qtConsumoSMS: Int? = null,
+        val stMsisdnGold: Int? = null
+    )
+
+    @Serializable
+    data class TransactionInfo(
+        val globalTransactionId: String? = null,
+        val localTransactionId: String? = null,
+        val localTransactionDate: String? = null
+    )
+}
+
+internal object ConsultIccidEndpoint : Endpoint {
+    override val path = "spec-mobile/v2/consumer/consulta-iccid"
+    override val method = HttpMethod.Get
+}
+
+@Throws(ApiError::class, CancellationException::class)
+suspend fun SurfApiKit.consultIccid(request: ConsultIccidRequest): ConsultIccidSuccess =
+    client.send(ConsultIccidEndpoint, query = mapOf("nuIccid" to request.nuIccid))
