@@ -29,7 +29,7 @@ data class GetCustomerSuccess(
         val tpDocumento: String? = null,
         val dsPassword: String,
         val dsEmail: String? = null,
-        val nuMsisdnAlternativo: Int? = null,
+        val nuMsisdnAlternativo: Long? = null,
         val dsCEP: String? = null,
         val dsEndereco: String? = null,
         val dsNumero: Int? = null,
