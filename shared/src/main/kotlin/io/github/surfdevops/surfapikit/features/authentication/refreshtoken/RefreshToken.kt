@@ -1,18 +1,16 @@
 package io.github.surfdevops.surfapikit.features.authentication.refreshtoken
 
 import io.github.surfdevops.surfapikit.SurfApiKit
-import io.github.surfdevops.surfapikit.core.Endpoint
-import io.github.surfdevops.surfapikit.core.joinUrl
-import io.ktor.client.call.body
-import io.ktor.client.request.headers
-import io.ktor.client.request.request
-import io.ktor.client.request.setBody
-import io.ktor.client.request.url
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.HttpMethod
-import kotlinx.serialization.Serializable
 import io.github.surfdevops.surfapikit.core.ApiError
+import io.github.surfdevops.surfapikit.core.Endpoint
+import io.github.surfdevops.surfapikit.core.HttpMethod
+import io.github.surfdevops.surfapikit.core.await
+import io.github.surfdevops.surfapikit.core.joinUrl
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
@@ -38,28 +36,33 @@ internal object RefreshTokenEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+private val refreshJson = Json { ignoreUnknownKeys = true; isLenient = true }
+private val jsonMedia = "application/json; charset=utf-8".toMediaType()
+
 internal suspend fun SurfApiKit.refreshTokenInternal(request: RefreshTokenRequest): RefreshTokenSuccess {
-    val fullUrl = joinUrl(client.environment.baseUrl, RefreshTokenEndpoint.path)
-    val response: HttpResponse = client.http.request {
-        method = HttpMethod.Post
-        url(fullUrl)
-        headers {
-            append("Content-Type", "application/json")
-            append("Accept", "application/json")
+    val httpRequest = Request.Builder()
+        .url(joinUrl(client.environment.baseUrl, RefreshTokenEndpoint.path))
+        .post(refreshJson.encodeToString(RefreshTokenRequest.serializer(), request).toRequestBody(jsonMedia))
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .build()
+
+    // Bare client (no auth interceptor): the refresh call must not itself be intercepted.
+    val response = client.rawClient.newCall(httpRequest).await()
+    return response.use { resp ->
+        val text = resp.body?.string()
+        if (!resp.isSuccessful) {
+            throw ApiError.Server(status = resp.code, serverMessage = text)
         }
-        setBody(request)
-    }
-    if (response.status.value >= 400) {
-        throw io.github.surfdevops.surfapikit.core.ApiError.Server(
-            status = response.status.value,
-            serverMessage = runCatching { response.bodyAsText() }.getOrNull()
+        val result = refreshJson.decodeFromString(
+            RefreshTokenSuccess.serializer(),
+            text ?: throw ApiError.Unknown,
         )
+        tokenStore.accessToken = result.resultado.accessToken
+        tokenStore.refreshToken = result.resultado.refreshToken
+        if (tokenStore.tokenType.isNullOrEmpty()) tokenStore.tokenType = "Bearer"
+        result
     }
-    val result: RefreshTokenSuccess = response.body()
-    tokenStore.accessToken = result.resultado.accessToken
-    tokenStore.refreshToken = result.resultado.refreshToken
-    if (tokenStore.tokenType.isNullOrEmpty()) tokenStore.tokenType = "Bearer"
-    return result
 }
 
 @Throws(ApiError::class, CancellationException::class)

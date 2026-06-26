@@ -2,7 +2,7 @@ package io.github.surfdevops.surfapikit.features.portability
 
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
-import io.ktor.http.HttpMethod
+import io.github.surfdevops.surfapikit.core.HttpMethod
 import kotlinx.serialization.Serializable
 import io.github.surfdevops.surfapikit.core.ApiError
 import kotlin.coroutines.cancellation.CancellationException

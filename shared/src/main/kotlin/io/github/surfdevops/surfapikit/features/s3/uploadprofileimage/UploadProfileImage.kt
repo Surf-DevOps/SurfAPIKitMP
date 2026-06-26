@@ -3,12 +3,12 @@ package io.github.surfdevops.surfapikit.features.s3.uploadprofileimage
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.ApiError
 import io.github.surfdevops.surfapikit.core.Endpoint
-import io.ktor.client.HttpClient
-import io.ktor.client.request.put
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.HttpMethod
+import io.github.surfdevops.surfapikit.core.HttpMethod
+import io.github.surfdevops.surfapikit.core.await
 import kotlinx.serialization.Serializable
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlin.coroutines.cancellation.CancellationException
 
 data class UploadProfileImageRequest(val key: String)
@@ -37,13 +37,17 @@ internal object UploadProfileImageEndpoint : Endpoint {
 suspend fun SurfApiKit.uploadProfileImage(request: UploadProfileImageRequest): UploadProfileImageResponse =
     client.send(UploadProfileImageEndpoint, query = mapOf("key" to request.key))
 
-private val rawHttp = HttpClient()
+private val rawHttp = OkHttpClient()
 
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.uploadImageToS3(url: String, imageData: ByteArray) {
     try {
-        val response: HttpResponse = rawHttp.put(url) { setBody(imageData) }
-        if (response.status.value >= 400) throw ApiError.Server(response.status.value)
+        val request = Request.Builder()
+            .url(url)
+            .put(imageData.toRequestBody())
+            .build()
+        val response = rawHttp.newCall(request).await()
+        response.use { if (it.code >= 400) throw ApiError.Server(it.code) }
     } catch (e: ApiError) {
         throw e
     } catch (e: Throwable) {

@@ -3,12 +3,11 @@ package io.github.surfdevops.surfapikit.features.s3.downloadimageprofile
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.ApiError
 import io.github.surfdevops.surfapikit.core.Endpoint
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.HttpMethod
+import io.github.surfdevops.surfapikit.core.HttpMethod
+import io.github.surfdevops.surfapikit.core.await
 import kotlinx.serialization.Serializable
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import kotlin.coroutines.cancellation.CancellationException
 
 data class DownloadImageProfileRequest(val key: String, val values: String)
@@ -40,13 +39,16 @@ internal object DownloadImageProfileEndpoint : Endpoint {
 suspend fun SurfApiKit.downloadImageProfile(request: DownloadImageProfileRequest): DownloadImageProfileResponse =
     client.send(DownloadImageProfileEndpoint, query = mapOf("key" to request.key, "values" to request.values))
 
-private val rawHttp = HttpClient()
+private val rawHttp = OkHttpClient()
 
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.downloadImageFromS3(url: String): ByteArray = try {
-    val response: HttpResponse = rawHttp.get(url)
-    if (response.status.value >= 400) throw ApiError.Server(response.status.value)
-    response.body()
+    val request = Request.Builder().url(url).get().build()
+    val response = rawHttp.newCall(request).await()
+    response.use { resp ->
+        if (resp.code >= 400) throw ApiError.Server(resp.code)
+        resp.body?.bytes() ?: ByteArray(0)
+    }
 } catch (e: ApiError) {
     throw e
 } catch (e: Throwable) {

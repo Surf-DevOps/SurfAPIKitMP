@@ -1,13 +1,10 @@
 package io.github.surfdevops.surfapikit.features.viacep
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.get
-import io.ktor.client.statement.HttpResponse
-import io.ktor.serialization.kotlinx.json.json
+import io.github.surfdevops.surfapikit.core.await
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
+import okhttp3.Request
 
 @Serializable
 data class ViaCEPResponse(
@@ -36,27 +33,29 @@ sealed class ViaCEPError : Throwable() {
 
 object ViaCEPClient {
     private const val BASE_URL = "https://viacep.com.br/ws/"
-    private val http = HttpClient {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    }
+    private val http = OkHttpClient()
+    private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun buscarCEP(cep: String): ViaCEPResponse {
         val cleanCEP = cep.filter { it.isDigit() }
         if (cleanCEP.length != 8) throw ViaCEPError.InvalidCEP
 
-        val response: HttpResponse = try {
-            http.get("$BASE_URL$cleanCEP/json/")
+        val request = Request.Builder().url("$BASE_URL$cleanCEP/json/").get().build()
+        val response = try {
+            http.newCall(request).await()
         } catch (_: Throwable) {
             throw ViaCEPError.NetworkError
         }
-        if (response.status.value !in 200..299) throw ViaCEPError.NetworkError
-
-        val body: ViaCEPResponse = try {
-            response.body()
-        } catch (_: Throwable) {
-            throw ViaCEPError.DecodingError
+        return response.use { resp ->
+            if (resp.code !in 200..299) throw ViaCEPError.NetworkError
+            val text = resp.body?.string() ?: throw ViaCEPError.DecodingError
+            val body = try {
+                json.decodeFromString(ViaCEPResponse.serializer(), text)
+            } catch (_: Throwable) {
+                throw ViaCEPError.DecodingError
+            }
+            if (body.erro == true) throw ViaCEPError.CepNotFound
+            body
         }
-        if (body.erro == true) throw ViaCEPError.CepNotFound
-        return body
     }
 }

@@ -3,21 +3,20 @@ package io.github.surfdevops.surfapikit.features.payments.paymentstatus
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.ApiError
 import io.github.surfdevops.surfapikit.core.Endpoint
+import io.github.surfdevops.surfapikit.core.HttpMethod
+import io.github.surfdevops.surfapikit.core.await
 import io.github.surfdevops.surfapikit.core.joinUrl
-import io.ktor.client.request.headers
-import io.ktor.client.request.prepareRequest
-import io.ktor.client.request.url
-import io.ktor.client.statement.bodyAsChannel
-import io.ktor.http.HttpMethod
-import io.ktor.utils.io.readUTF8Line
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 @Serializable
 data class PaymentStatusUpdate(val status: String, val paymentId: String) {
@@ -59,48 +58,48 @@ fun SurfApiKit.statusStream(paymentId: String): Flow<PaymentStatusStreamResult> 
     val fullUrl = joinUrl(client.environment.baseUrl, endpoint.path)
     val json = Json { ignoreUnknownKeys = true }
 
-    var hasReceivedData = false
+    val builder = Request.Builder().url(fullUrl).get()
+    endpoint.headers.forEach { (k, v) -> builder.header(k, v) }
+    builder.header("Connection", "keep-alive")
+    // Uses the bare client (no auth interceptor), same as the iOS stream, so inject the
+    // token manually here.
+    val accessToken = client.tokenStore.accessToken
+    if (!accessToken.isNullOrEmpty()) {
+        val tokenType = client.tokenStore.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
+        builder.header("Authorization", "$tokenType $accessToken")
+    }
 
-    client.http.prepareRequest {
-        method = HttpMethod.Get
-        url(fullUrl)
-        headers {
-            endpoint.headers.forEach { (k, v) -> append(k, v) }
-            append("Connection", "keep-alive")
-            // O AuthInterceptor não roda em streams (mesmo motivo do iOS em
-            // PaymentStatusEndpoint.swift), então injeta o token manualmente aqui.
-            val accessToken = client.tokenStore.accessToken
-            if (!accessToken.isNullOrEmpty()) {
-                val tokenType = client.tokenStore.tokenType?.takeIf { it.isNotEmpty() } ?: "Bearer"
-                append("Authorization", "$tokenType $accessToken")
-            }
-        }
-    }.execute { response ->
-        if (response.status.value >= 400) {
-            throw ApiError.Server(response.status.value)
-        }
-        val channel = response.bodyAsChannel()
-        val buffer = StringBuilder()
+    // A long-lived event stream must not be killed by the shared read timeout; disable it.
+    val streamClient = client.rawClient.newBuilder()
+        .readTimeout(0, TimeUnit.SECONDS)
+        .build()
+    val response = streamClient.newCall(builder.build()).await()
+    response.use { resp ->
+        if (resp.code >= 400) throw ApiError.Server(resp.code)
+        val source = resp.body?.source() ?: throw ApiError.InvalidRequest("Empty stream")
+
+        var hasReceivedData = false
+        val eventBuffer = StringBuilder()
         while (true) {
-            val line = channel.readUTF8Line() ?: break
+            val line = source.readUtf8Line() ?: break
             hasReceivedData = true
             if (line.isEmpty()) {
-                val event = buffer.toString()
-                buffer.clear()
+                val event = eventBuffer.toString()
+                eventBuffer.clear()
                 if (event.isNotEmpty()) {
                     parseSSEEvent(event, json)?.let { emit(it) }
                 }
             } else {
-                buffer.appendLine(line)
+                eventBuffer.appendLine(line)
             }
         }
-        if (buffer.isNotEmpty()) {
-            parseSSEEvent(buffer.toString(), json)?.let { emit(it) }
+        if (eventBuffer.isNotEmpty()) {
+            parseSSEEvent(eventBuffer.toString(), json)?.let { emit(it) }
         }
-    }
 
-    if (!hasReceivedData) throw ApiError.InvalidRequest("Stream finished without receiving any data")
-}
+        if (!hasReceivedData) throw ApiError.InvalidRequest("Stream finished without receiving any data")
+    }
+}.flowOn(Dispatchers.IO)
 
 private fun parseSSEEvent(event: String, json: Json): PaymentStatusStreamResult? {
     var eventType: String? = null

@@ -1,7 +1,5 @@
 package io.github.surfdevops.surfapikit.core
 
-import io.ktor.http.HttpMethod
-
 interface Endpoint {
     val path: String
     val method: HttpMethod

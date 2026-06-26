@@ -2,7 +2,7 @@ package io.github.surfdevops.surfapikit.features.customer.createcustomer
 
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
-import io.ktor.http.HttpMethod
+import io.github.surfdevops.surfapikit.core.HttpMethod
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
