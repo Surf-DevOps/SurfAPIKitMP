@@ -43,6 +43,8 @@ object ViaCEPClient {
         val request = Request.Builder().url("$BASE_URL$cleanCEP/json/").get().build()
         val response = try {
             http.newCall(request).await()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (_: Throwable) {
             throw ViaCEPError.NetworkError
         }
