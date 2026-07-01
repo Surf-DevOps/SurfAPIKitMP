@@ -1,6 +1,8 @@
 package io.github.surfdevops.surfapikit.features.viacep
 
 import io.github.surfdevops.surfapikit.core.await
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -36,7 +38,7 @@ object ViaCEPClient {
     private val http = OkHttpClient()
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun buscarCEP(cep: String): ViaCEPResponse {
+    suspend fun buscarCEP(cep: String): ViaCEPResponse = withContext(Dispatchers.IO) {
         val cleanCEP = cep.filter { it.isDigit() }
         if (cleanCEP.length != 8) throw ViaCEPError.InvalidCEP
 
@@ -48,7 +50,7 @@ object ViaCEPClient {
         } catch (_: Throwable) {
             throw ViaCEPError.NetworkError
         }
-        return response.use { resp ->
+        response.use { resp ->
             if (resp.code !in 200..299) throw ViaCEPError.NetworkError
             val text = resp.body?.string() ?: throw ViaCEPError.DecodingError
             val body = try {
