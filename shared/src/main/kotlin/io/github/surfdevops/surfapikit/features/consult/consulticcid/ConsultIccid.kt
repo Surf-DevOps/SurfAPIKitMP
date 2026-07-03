@@ -3,7 +3,9 @@ package io.github.surfdevops.surfapikit.features.consult.consulticcid
 import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.core.Endpoint
 import io.github.surfdevops.surfapikit.core.HttpMethod
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 import io.github.surfdevops.surfapikit.core.ApiError
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -17,22 +19,27 @@ data class ConsultIccidSuccess(
     val resultado: LineDetail? = null,
     val transaction: TransactionInfo? = null
 ) {
+    /**
+     * O backend também responde com nomes sem prefixo húngaro
+     * (ex.: `iccid`, `msisdn`, `status`); aceitos via [JsonNames].
+     */
+    @OptIn(ExperimentalSerializationApi::class)
     @Serializable
     data class LineDetail(
         val coMsisdn: Long? = null,
         val stPortin: Int? = null,
         val vlSaldo: Double? = null,
         val dtAtivacao: String? = null,
-        val nuIccid: String? = null,
-        val nuImsi: Long? = null,
+        @JsonNames("iccid") val nuIccid: String? = null,
+        @JsonNames("imsi") val nuImsi: Long? = null,
         val dtPortin: String? = null,
         val dtPortout: String? = null,
-        val nuDocumento: String? = null,
+        @JsonNames("documento") val nuDocumento: String? = null,
         val dsObservacao: String? = null,
-        val noMsisdnStatus: String? = null,
-        val noMvno: String? = null,
-        val noSubmvno: String? = null,
-        val nuMsisdn: Long? = null,
+        @JsonNames("status") val noMsisdnStatus: String? = null,
+        @JsonNames("mvno") val noMvno: String? = null,
+        @JsonNames("submvno") val noSubmvno: String? = null,
+        @JsonNames("msisdn") val nuMsisdn: Long? = null,
         val noPlano: String? = null,
         val qtDadoRestante: Int? = null,
         val qtMinutoRestante: Int? = null,
@@ -60,7 +67,11 @@ data class ConsultIccidSuccess(
         val qtConsumoDado: Int? = null,
         val qtConsumoVoz: Int? = null,
         val qtConsumoSMS: Int? = null,
-        val stMsisdnGold: Int? = null
+        val stMsisdnGold: Int? = null,
+        val nuPlano: String? = null,
+        val accountId: Long? = null,
+        val stPlanoControle: String? = null,
+        val tipoDocumento: String? = null
     )
 
     @Serializable
