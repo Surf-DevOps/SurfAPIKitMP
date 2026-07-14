@@ -240,7 +240,9 @@ class ApiClient internal constructor(
         if (status < 400) return successBody(text, allowEmpty)
 
         val err = parseApiError(text, status)
-        val isAuthError = status == 401 || (err is ApiError.Api && err.code == 6)
+        // Token expirado/inválido: HTTP 401, ou os códigos de negócio 6 ("token
+        // expirado") e 92 ("Token inválido"). Ambos disparam o refresh + replay.
+        val isAuthError = status == 401 || (err is ApiError.Api && (err.code == 6 || err.code == 92))
         val isRefreshEndpoint = endpoint.path.contains(REFRESH_PATH)
         val canRefreshRetry = isAuthError && !isRefreshEndpoint && !tokenStore.refreshToken.isNullOrEmpty()
         if (!canRefreshRetry) throw err
