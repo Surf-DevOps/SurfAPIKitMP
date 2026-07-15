@@ -62,23 +62,27 @@ data class CompreGanheAdminPlanosSuccess(
     )
 }
 
-internal class CompreGanheAdminPlanosEndpoint(
-    mvnoId: Int,
-    private val adminToken: String
-) : Endpoint {
+/**
+ * Configuração do painel admin do Compre e Ganhe. O kit injeta o
+ * `X-Admin-Token` nos endpoints `compre-ganhe-admin` (mesmo desenho do
+ * interceptor de sessão): o app configura o valor no launch (ex.: vindo
+ * de gradle.properties.local/CI) e não lida com o header.
+ */
+object CompreGanheAdminConfig {
+    var adminToken: String = ""
+}
+
+internal class CompreGanheAdminPlanosEndpoint(mvnoId: Int) : Endpoint {
     override val path = "spec-mobile/v1/compre-ganhe-admin/planos/$mvnoId"
     override val method = HttpMethod.Get
     override val headers: Map<String, String>
         get() = mapOf(
             "Content-Type" to "application/json",
             "Accept" to "application/json",
-            "X-Admin-Token" to adminToken
+            "X-Admin-Token" to CompreGanheAdminConfig.adminToken
         )
 }
 
 @Throws(ApiError::class, CancellationException::class)
-suspend fun SurfApiKit.compreGanheAdminPlanos(
-    mvnoId: Int,
-    adminToken: String
-): CompreGanheAdminPlanosSuccess =
-    client.send(CompreGanheAdminPlanosEndpoint(mvnoId, adminToken))
+suspend fun SurfApiKit.compreGanheAdminPlanos(mvnoId: Int): CompreGanheAdminPlanosSuccess =
+    client.send(CompreGanheAdminPlanosEndpoint(mvnoId))
