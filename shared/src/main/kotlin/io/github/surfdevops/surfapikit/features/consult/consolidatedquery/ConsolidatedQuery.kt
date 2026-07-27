@@ -23,6 +23,9 @@ data class ConsolidatedQuerySuccess(
         val coMsisdn: Long,
         val nuMsisdn: Long,
         val noMvno: String,
+        val coMvno: Int? = null,
+        val noMvnoFilha: String? = null,
+        val coMvnoFilha: Int? = null,
         val nuDocumento: String,
         @SerialName("detalhe_consumo") val detalheConsumo: DetalheConsumo? = null,
         @SerialName("detalhe_plano") val detalhePlano: DetalhePlano,
@@ -93,7 +96,7 @@ data class ConsolidatedQuerySuccess(
 }
 
 internal object ConsolidatedQueryEndpoint : Endpoint {
-    override val path = "spec-mobile/v2/consumer/consulta-consolidada"
+    override val path = "spec-mobile/v3/consumer/consulta-consolidada"
     override val method = HttpMethod.Get
 }
 
