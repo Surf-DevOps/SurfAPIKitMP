@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:3.4.0")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:4.0.0")
 }
 ```
 
@@ -41,7 +41,22 @@ import io.github.surfdevops.surfapikit.SurfApiKit
 import io.github.surfdevops.surfapikit.features.authentication.login.*
 
 val res = SurfApiKit.login(LoginRequest(nuDocumento = "...", dsPassword = "...", coMvno = 1))
+
+// O endpoint responde HTTP 200 em dois formatos. Antes de validar a senha, o backend
+// checa se o documento existe na base — se não existir, vem `sucesso = 1` com
+// `resultado.documentoExiste = false` e SEM registros/selectionToken.
+if (res.documentNotRegistered) {
+    // documento não cadastrado: ofereça o cadastro
+} else {
+    val registros = res.resultado.registros.orEmpty()
+    // segue para a seleção de linha
+}
 ```
+
+> **Breaking em 4.0.0** — `LoginSuccess.Resultado` teve os campos `nuDocumento`,
+> `registros`, `selectionToken` e `tokenType` tornados **nullable** para acomodar a
+> resposta "documento não cadastrado" (que antes estourava `ApiError.Decoding`).
+> Use `documentNotRegistered` para distinguir os dois formatos.
 
 O `accessToken`/`refreshToken` são salvos automaticamente (EncryptedSharedPreferences) e injetados como `Authorization: Bearer ...` em todas as próximas chamadas. **Refresh em 401 é automático** via plugin Auth do Ktor — você não precisa orquestrar nada.
 
