@@ -18,6 +18,7 @@ data class CreatePaymentRequest(
     val amount: Int,
     val paymentType: PaymentType,
     val nuPlano: String,
+    val cupom: String? = null,
     val cvv: String? = null,
     val isRecurring: Boolean? = null,
     val addon: Boolean? = null,
@@ -33,34 +34,34 @@ data class CreatePaymentRequest(
     val newCard: ScheduledNewCard? = null
 ) {
     companion object {
-        fun pixPayment(coMsisdn: Long, amount: Int, nuPlano: String) = CreatePaymentRequest(
-            coMsisdn = coMsisdn, amount = amount, paymentType = PaymentType.PIX, nuPlano = nuPlano
+        fun pixPayment(coMsisdn: Long, amount: Int, nuPlano: String, cupom: String? = null) = CreatePaymentRequest(
+            coMsisdn = coMsisdn, amount = amount, paymentType = PaymentType.PIX, nuPlano = nuPlano, cupom = cupom
         )
 
-        fun cardPayment(coMsisdn: Long, cardId: String, amount: Int, nuPlano: String, isRecurring: Boolean) =
+        fun cardPayment(coMsisdn: Long, cardId: String, amount: Int, nuPlano: String, isRecurring: Boolean, cupom: String? = null) =
             CreatePaymentRequest(
                 coMsisdn = coMsisdn, cardId = cardId, amount = amount,
-                paymentType = PaymentType.CARD, nuPlano = nuPlano, isRecurring = isRecurring
+                paymentType = PaymentType.CARD, nuPlano = nuPlano, isRecurring = isRecurring, cupom = cupom
             )
 
         /**
          * Recarga PROGRAMADA em cartão existente: CARD recorrente com dia da 1ª cobrança futura.
          */
-        fun scheduledCardPayment(coMsisdn: Long, cardId: String, amount: Int, nuPlano: String, billingDay: Int) =
+        fun scheduledCardPayment(coMsisdn: Long, cardId: String, amount: Int, nuPlano: String, billingDay: Int, cupom: String? = null) =
             CreatePaymentRequest(
                 coMsisdn = coMsisdn, cardId = cardId, amount = amount,
                 paymentType = PaymentType.CARD, nuPlano = nuPlano, isRecurring = true,
-                billingDay = billingDay
+                billingDay = billingDay, cupom = cupom
             )
 
         /**
          * Recarga PROGRAMADA com cartão novo a tokenizar: CARD recorrente sem `cardId`.
          */
-        fun scheduledCardPayment(coMsisdn: Long, newCard: ScheduledNewCard, amount: Int, nuPlano: String, billingDay: Int) =
+        fun scheduledCardPayment(coMsisdn: Long, newCard: ScheduledNewCard, amount: Int, nuPlano: String, billingDay: Int, cupom: String? = null) =
             CreatePaymentRequest(
                 coMsisdn = coMsisdn, amount = amount,
                 paymentType = PaymentType.CARD, nuPlano = nuPlano, isRecurring = true,
-                billingDay = billingDay, newCard = newCard
+                billingDay = billingDay, newCard = newCard, cupom = cupom
             )
     }
 }

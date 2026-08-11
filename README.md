@@ -87,6 +87,35 @@ val resp = ViaCEPClient.buscarCEP("01310-100")
 println(resp.localidade) // São Paulo
 ```
 
+### Cupons de Desconto
+
+```kotlin
+import io.github.surfdevops.surfapikit.features.coupons.validatecoupon.*
+import io.github.surfdevops.surfapikit.features.payments.createpayment.*
+
+// 1. Validar (preview - valores em REAIS)
+val req = ValidateCouponRequest(
+    idCupom = "PAGUEELEVE10",
+    coMvno = 48,
+    nuPlano = "100",
+    vlRecarga = 50.0,
+    nuDocumento = "12345678901"
+)
+val res = SurfApiKit.validateCoupon(req)
+println("Desconto: R$ ${res.content.vlDescontoAplicado}")
+
+// 2. Aplicar na Recarga (valor cheio em CENTAVOS)
+val payReq = CreatePaymentRequest.cardPayment(
+    coMsisdn = 5511999999999,
+    cardId = "...",
+    amount = 5000,
+    nuPlano = "100",
+    isRecurring = false,
+    cupom = "PAGUEELEVE10"
+)
+val payRes = SurfApiKit.createPayment(payReq)
+```
+
 ---
 
 ## Tratamento de erros
@@ -130,7 +159,7 @@ shared/
     │   ├── config/    # ApiEnvironment (prod default)
     │   ├── locations/ # LocationManager (FusedLocationProvider) + DDDResolver
     │   ├── platform/  # AppInfo, AppContextHolder (androidx.startup)
-    │   └── features/  # auth, cards, catalog, compreganhe, config, consult, customer,
+    │   └── features/  # auth, cards, catalog, compreganhe, config, consult, coupons, customer,
     │                  # dreamshaper, mandouganhou, payments, portability, recharge,
     │                  # s3, schedule, viacep
     └── AndroidManifest.xml

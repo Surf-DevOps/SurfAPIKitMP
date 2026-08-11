@@ -21,6 +21,7 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response as OkHttpResponse
 import okhttp3.ResponseBody
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.create
@@ -135,6 +136,9 @@ class ApiClient internal constructor(
         .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .addInterceptor(HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        })
         .build()
 
     /** Authenticated client used by every regular endpoint. */
@@ -325,6 +329,11 @@ class ApiClient internal constructor(
                 }
                 (obj["error"] as? JsonPrimitive)?.contentOrNull?.let {
                     return ApiError.Api(statusCode, it)
+                }
+                (obj["error"] as? JsonObject)?.let { errorObj ->
+                    (errorObj["message"] as? JsonPrimitive)?.contentOrNull?.let {
+                        return ApiError.Api(statusCode, it)
+                    }
                 }
             }
         return ApiError.Server(statusCode, null, "Erro ao processar requisição")
