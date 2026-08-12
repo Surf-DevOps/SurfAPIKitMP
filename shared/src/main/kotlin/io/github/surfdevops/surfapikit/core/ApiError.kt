@@ -1,6 +1,10 @@
 package io.github.surfdevops.surfapikit.core
 
 import kotlinx.serialization.Serializable
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import javax.net.ssl.SSLException
 
 @Serializable
 data class ApiErrorResponse(
@@ -52,6 +56,22 @@ sealed class ApiError : Throwable() {
         get() = when (this) {
             is Api -> "Erro $code\n$apiMessage"
             is Server -> if (code != null && serverMessage != null) "Erro $code\n$serverMessage" else message
+            // Nunca expor texto de exceção de transporte/parse ao usuário — `message`
+            // continua técnico para logs, aqui vai a versão amigável.
+            is Transport -> transportUserMessage
+            is Decoding -> "Não foi possível processar a resposta do servidor. Tente novamente."
             else -> message
+        }
+
+    private val transportUserMessage: String
+        get() = when (cause) {
+            is UnknownHostException, is ConnectException ->
+                "Sem conexão com a internet. Verifique sua rede e tente novamente."
+            is SocketTimeoutException ->
+                "A conexão demorou mais do que o esperado. Tente novamente."
+            is SSLException ->
+                "Não foi possível estabelecer uma conexão segura. Tente novamente."
+            else ->
+                "Não foi possível concluir a operação. Verifique sua conexão e tente novamente."
         }
 }
