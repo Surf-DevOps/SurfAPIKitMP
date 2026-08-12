@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:4.0.1")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:4.0.2")
 }
 ```
 
