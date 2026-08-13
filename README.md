@@ -24,9 +24,17 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:4.0.0")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v4.0.2")
 }
 ```
+
+> **Atenção ao coordinate.** O `VERSION_NAME` atual é 4.0.3, mas o último
+> artefato efetivamente publicado no JitPack é `v4.0.2` (mesmo conteúdo). Em
+> 2026-08-12 o JitPack passou a responder `tagNotFound` para as tags `4.0.3` e
+> `v4.0.3` mesmo existindo no GitHub — cache de refs do lado dele. Os aliases
+> `4.0.1` e `4.0.2` (sem "v") também ficaram presos nesse estado e não se
+> recuperam. Antes de trocar o pin, confirmar com
+> `curl -sI https://jitpack.io/com/github/Surf-DevOps/SurfAPIKitMP/<versão>/SurfAPIKitMP-<versão>.pom`.
 
 Permissões já vêm declaradas no `AndroidManifest.xml` da lib (INTERNET, ACCESS_NETWORK_STATE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION). O `Context` é capturado automaticamente via `androidx.startup`.
 
