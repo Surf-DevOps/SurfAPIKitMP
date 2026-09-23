@@ -9,13 +9,6 @@ import io.github.surfdevops.surfapikit.core.ApiError
 import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
-data class GetRecurrenceEventsSuccess(
-    val status: Int,
-    val message: String,
-    val content: List<RecurrenceEvent>? = null
-)
-
-@Serializable
 data class RecurrenceEvent(
     val id: String,
     @SerialName("recurrence_id") val recurrenceId: String,
@@ -31,12 +24,13 @@ internal data class GetRecurrenceEventsEndpoint(val recurrenceId: String) : Endp
     override val method = HttpMethod.Get
 }
 
+// O endpoint devolve o array de eventos cru, sem envelope.
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.getRecurrenceEvents(
     recurrenceId: String,
     limit: Int = 10,
     offset: Int = 0
-): GetRecurrenceEventsSuccess =
+): List<RecurrenceEvent> =
     client.send(
         GetRecurrenceEventsEndpoint(recurrenceId),
         query = mapOf("limit" to limit.toString(), "offset" to offset.toString())

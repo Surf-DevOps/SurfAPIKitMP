@@ -8,15 +8,9 @@ import kotlinx.serialization.Serializable
 import io.github.surfdevops.surfapikit.core.ApiError
 import kotlin.coroutines.cancellation.CancellationException
 
+// O endpoint devolve o PIX cru, sem envelope `{status, message, content}`.
 @Serializable
 data class PayPixRecurrenceSuccess(
-    val status: Int,
-    val message: String,
-    val content: PayPixRecurrenceContent? = null
-)
-
-@Serializable
-data class PayPixRecurrenceContent(
     @SerialName("pix_id") val pixId: String,
     @SerialName("pix_code") val pixCode: String,
     @SerialName("pix_qr_url") val pixQrUrl: String,

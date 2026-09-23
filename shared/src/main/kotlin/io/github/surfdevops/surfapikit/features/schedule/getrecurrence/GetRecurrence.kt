@@ -8,15 +8,9 @@ import kotlinx.serialization.Serializable
 import io.github.surfdevops.surfapikit.core.ApiError
 import kotlin.coroutines.cancellation.CancellationException
 
+// Mesmo RecurrenceResponseDto cru dos demais endpoints de /recorrencias — sem envelope.
 @Serializable
 data class GetRecurrenceSuccess(
-    val status: Int,
-    val message: String,
-    val content: GetRecurrenceContent? = null
-)
-
-@Serializable
-data class GetRecurrenceContent(
     val id: String,
     val msisdn: String,
     val cpf: String,

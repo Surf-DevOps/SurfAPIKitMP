@@ -13,15 +13,11 @@ data class UpdateBillingDayRequest(
     @SerialName("billing_day") val billingDay: Int
 )
 
+// O endpoint devolve a recorrencia atualizada crua, sem envelope `{status, message,
+// content}` — mesmo shape de ListRecurrencesSuccess e ChangePlanSuccess, que sao o
+// mesmo RecurrenceResponseDto do backend.
 @Serializable
 data class UpdateBillingDaySuccess(
-    val status: Int,
-    val message: String,
-    val content: UpdateBillingDayContent? = null
-)
-
-@Serializable
-data class UpdateBillingDayContent(
     val id: String,
     val msisdn: String,
     val cpf: String,
