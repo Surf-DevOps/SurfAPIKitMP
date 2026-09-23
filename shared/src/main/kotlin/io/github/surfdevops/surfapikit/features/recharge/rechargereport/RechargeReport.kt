@@ -39,7 +39,37 @@ data class RechargeReportSuccess(
         val origem: String? = null,
         val plano: Plano? = null,
         val dtCadastro: String,
-        val dtExecucao: String
+        val dtExecucao: String,
+        /**
+         * Quebra bruto/desconto/líquido da recarga. Só a v2 (`rechargeReportV2`) devolve
+         * este bloco, e mesmo lá vem `null` quando a recarga não teve cupom — que é o caso
+         * comum. O BSS não guarda o que o cliente pagou; isto vem do payment-gateway.
+         */
+        val desconto: Desconto? = null
+    )
+
+    /**
+     * Desconto consolidado de uma transação. Cupom acumulativo soma vários `cupons`;
+     * utilização `ESTORNADO` aparece na lista mas não abate [vlDesconto].
+     */
+    @Serializable
+    data class Desconto(
+        /** Valor cheio da recarga, antes do cupom. */
+        val vlBruto: Double,
+        /** Soma dos descontos vigentes (estornados não entram). */
+        val vlDesconto: Double,
+        /** O que o cliente pagou: `vlBruto - vlDesconto`. */
+        val vlPago: Double,
+        val cupons: List<CupomAplicado> = emptyList()
+    )
+
+    @Serializable
+    data class CupomAplicado(
+        val idCupom: String,
+        val vlDesconto: Double,
+        /** `APLICADO` ou `ESTORNADO`. */
+        val stStatus: String,
+        val dtUtilizacao: String
     )
 
     @Serializable
@@ -64,10 +94,36 @@ internal object RechargeReportEndpoint : Endpoint {
     override val method = HttpMethod.Get
 }
 
+/**
+ * v2 do relatório: mesmo payload da v1 com `desconto` a mais em cada transação.
+ * Aditiva — a v1 segue intacta.
+ */
+internal object RechargeReportV2Endpoint : Endpoint {
+    override val path = "spec-mobile/v2/recarga/relatorio"
+    override val method = HttpMethod.Get
+}
+
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.rechargeReport(request: RechargeReportRequest): RechargeReportSuccess =
     client.send(
         RechargeReportEndpoint,
+        query = buildMap {
+            put("coMsisdn", request.coMsisdn)
+        }
+    )
+
+/**
+ * Relatório de recargas com o desconto de cupom aplicado
+ * (`GET spec-mobile/v2/recarga/relatorio`).
+ *
+ * Resposta idêntica à da v1 — mesmo [RechargeReportSuccess] — só que cada transação pode
+ * trazer [RechargeReportSuccess.Desconto]. Quando a recarga não teve cupom, ou quando o
+ * payment-gateway está fora do ar, o campo vem `null` e o relatório volta inteiro.
+ */
+@Throws(ApiError::class, CancellationException::class)
+suspend fun SurfApiKit.rechargeReportV2(request: RechargeReportRequest): RechargeReportSuccess =
+    client.send(
+        RechargeReportV2Endpoint,
         query = buildMap {
             put("coMsisdn", request.coMsisdn)
         }
