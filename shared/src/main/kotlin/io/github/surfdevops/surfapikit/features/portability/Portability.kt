@@ -16,15 +16,33 @@ data class PortabilityRequest(
     val nomeCompleto: String
 )
 
+// Mesmo formato do core-network: o spec-mobile devolve o envelope
+// sucesso/transacao/descricao/resultado/transaction, não os campos na raiz.
 @Serializable
 data class PortabilityResponse(
-    val coPortabilidade: String,
-    val coMsisdn: Long,
-    val nuMsisdnOrigem: Long,
-    val nuMsisdnOutraOperadora: Long,
-    val ticket: String,
-    val dtCadastro: String
-)
+    val sucesso: Int,
+    val transacao: String,
+    val descricao: String,
+    val resultado: Resultado? = null,
+    val transaction: TransactionInfo? = null
+) {
+    @Serializable
+    data class Resultado(
+        val coPortabilidade: Long,
+        val coMsisdn: Long,
+        val nuMsisdnOrigem: Long,
+        val nuMsisdnOutraOperadora: Long,
+        val stFinalizado: Int,
+        val dtCadastro: String
+    )
+
+    @Serializable
+    data class TransactionInfo(
+        val globalTransactionId: String? = null,
+        val localTransactionId: String? = null,
+        val localTransactionDate: String? = null
+    )
+}
 
 @Serializable
 data class PortabilityStatusResponse(
