@@ -16,15 +16,15 @@ data class AvaliacaoElegibilidadeSuccess(
     val resultado: Resultado? = null,
     val transaction: AvaliacaoTransaction? = null
 ) {
+    /** Formato confirmado no spec-mobile em 21/10/2026. */
     @Serializable
     data class Resultado(
         /** `false` quando a jornada está desligada na MVNO ou a linha está no cooldown. */
-        val elegivel: Boolean,
-        /** Ex.: `JORNADA_DESLIGADA`, `COOLDOWN`. Só informativo. */
-        val motivo: String? = null,
-        val cooldownDias: Int? = null,
-        /** URL da loja cadastrada para a MVNO (Google Play no Android). */
-        val urlLoja: String? = null
+        val exibir: Boolean,
+        /** Avaliação já criada para a linha, quando o backend devolve uma. */
+        val idAvaliacao: String? = null,
+        /** Ex.: `AVALIACAO_DESATIVADA`. Só informativo. */
+        val motivo: String? = null
     )
 }
 

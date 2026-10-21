@@ -13,25 +13,19 @@ data class AvaliacaoCategoriasSuccess(
     val sucesso: Int,
     val transacao: String,
     val descricao: String? = null,
-    val resultado: Resultado? = null,
+    /** Catálogo único (as 8 categorias macro), igual para todas as notas. */
+    val resultado: List<Categoria> = emptyList(),
     val transaction: AvaliacaoTransaction? = null
 ) {
-    @Serializable
-    data class Resultado(val categorias: List<Categoria> = emptyList())
-
+    /** Formato confirmado no spec-mobile em 21/10/2026. */
     @Serializable
     data class Categoria(
         val id: Int,
-        val nome: String,
-        /** Grupo de notas em que a categoria aparece: [GRUPO_NEGATIVO] (1 a 3) ou [GRUPO_POSITIVO] (4 e 5). */
-        val grupo: String,
-        val ordem: Int? = null
+        val codigo: String,
+        val titulo: String,
+        /** Subitens da categoria em texto corrido. */
+        val descricao: String? = null
     )
-
-    companion object {
-        const val GRUPO_NEGATIVO = "NEGATIVO"
-        const val GRUPO_POSITIVO = "POSITIVO"
-    }
 }
 
 internal object AvaliacaoCategoriasEndpoint : Endpoint {

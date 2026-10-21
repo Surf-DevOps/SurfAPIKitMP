@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 /**
  * Jornada de Avaliação do app (CSAT 1 a 5 estrelas na tela "recarga realizada").
  *
- * Contrato PROVISÓRIO: o módulo `avaliacao` do spec-mobile ainda não foi
- * publicado. Campos e paths seguem o Documento de Esforço de 24/09/2026 e
- * devem ser revistos quando o backend sair. A identidade da linha vem do JWT,
- * nunca do corpo.
+ * Elegibilidade e categorias seguem o formato confirmado no spec-mobile
+ * (21/10/2026). Exibição, resposta, dispensa e loja seguem o Documento de
+ * Esforço de 24/09/2026 e ainda não foram confirmadas no backend. A
+ * identidade da linha vem do JWT, nunca do corpo.
  */
 object AvaliacaoStatus {
     const val PENDENTE = "PENDENTE"
