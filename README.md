@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v4.4.0")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v4.6.0")
 }
 ```
 
@@ -156,6 +156,10 @@ Em todos eles, `e.userDisplayMessage` traz uma string pronta pra alert ("Erro 42
 Você só precisa criar a tag. Nenhum passo manual.
 
 ---
+
+## Changelog
+
+- **v4.6.0** — `ValidateSimPurchaseSuccess.resultado` ganhou `noPerfil: String?` (`"ESTUDANTE"`/`"PROFESSOR"`/`null`), espelhando a rota `GET /v2/customer/validate-purchase` do backend (commit `71f60e8`, 19/10/2026). `null` cobre CPF não beneficiário, perfil ambíguo ou falha na consulta (falha-soft).
 
 ## Estrutura
 
