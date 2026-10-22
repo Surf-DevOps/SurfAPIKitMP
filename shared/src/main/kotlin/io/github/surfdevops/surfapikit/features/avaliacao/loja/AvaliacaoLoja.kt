@@ -12,7 +12,7 @@ internal data class AvaliacaoLojaEndpoint(val avaliacaoId: String) : Endpoint {
     override val method = HttpMethod.Patch
 }
 
-/** Registra o toque em "Avaliar na loja" (notas 4 e 5). O app abre a loja em seguida. */
+/** Registra o toque em "Avaliar na loja" (RESPONDIDA com nota 4-5, senão 409). Chamar antes de abrir a loja. */
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.avaliacaoLoja(avaliacaoId: String): AvaliacaoSuccess =
     client.send(AvaliacaoLojaEndpoint(avaliacaoId))

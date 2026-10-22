@@ -11,30 +11,30 @@ import kotlin.coroutines.cancellation.CancellationException
 
 @Serializable
 data class AvaliacaoExibicaoRequest(
-    val origem: String,
+    /** `tb_recarga.coRecarga` da recarga que abriu o pop-up. Precisa ser da linha do token. */
+    val coRecarga: String,
     val plataforma: String,
     val versaoApp: String
-) {
-    companion object {
-        const val ORIGEM_RECARGA_REALIZADA = "RECARGA_REALIZADA"
-    }
-}
+)
 
 internal object AvaliacaoExibicaoEndpoint : Endpoint {
     override val path = "spec-mobile/v1/avaliacao/exibicao"
     override val method = HttpMethod.Post
 }
 
-/** Registra a exibição do pop-up como PENDENTE; o `resultado.id` identifica a avaliação nas chamadas seguintes. */
+/**
+ * Registra a exibição do pop-up como PENDENTE (HTTP 201); o `resultado.idAvaliacao` identifica a
+ * avaliação nas chamadas seguintes. Idempotente por `coRecarga`, e devolve a PENDENTE que a
+ * linha já tiver em aberto (`reaproveitada = true`). 404 quando a recarga não é da linha e
+ * 409 quando a linha não está elegível.
+ */
 @Throws(ApiError::class, CancellationException::class)
-suspend fun SurfApiKit.avaliacaoExibicao(
-    origem: String = AvaliacaoExibicaoRequest.ORIGEM_RECARGA_REALIZADA
-): AvaliacaoSuccess =
+suspend fun SurfApiKit.avaliacaoExibicao(coRecarga: String): AvaliacaoSuccess =
     client.send(
         AvaliacaoExibicaoEndpoint,
         // Sem valores default no request: o Json do kit não usa encodeDefaults.
         body = AvaliacaoExibicaoRequest(
-            origem = origem,
+            coRecarga = coRecarga,
             plataforma = AppInfo.platform,
             versaoApp = AppInfo.appVersion
         )

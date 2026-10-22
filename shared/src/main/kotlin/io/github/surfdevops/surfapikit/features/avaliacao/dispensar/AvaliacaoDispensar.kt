@@ -12,7 +12,7 @@ internal data class AvaliacaoDispensarEndpoint(val avaliacaoId: String) : Endpoi
     override val method = HttpMethod.Patch
 }
 
-/** Toque fora, swipe ou "Agora não" antes de responder: DISPENSADA ("não respondeu"). */
+/** Toque fora ou swipe antes de responder: DISPENSADA ("não respondeu"). Idempotente; RESPONDIDA dá 409. */
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.avaliacaoDispensar(avaliacaoId: String): AvaliacaoSuccess =
     client.send(AvaliacaoDispensarEndpoint(avaliacaoId))
