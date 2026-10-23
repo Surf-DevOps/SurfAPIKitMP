@@ -25,7 +25,10 @@ data class ValidateSimPurchaseSuccess(
 data class SimPurchaseResultado(
     val temAmbos: Boolean,
     val esim: SimTypeInfo? = null,
-    val fisico: SimTypeInfo? = null
+    val fisico: SimTypeInfo? = null,
+    // "ESTUDANTE"/"PROFESSOR" quando o CPF é beneficiário da MVNO (ano letivo mais recente),
+    // ou null quando não é beneficiário, o perfil é ambíguo, ou a consulta falhou (falha-soft).
+    val noPerfil: String? = null
 )
 
 @Serializable
