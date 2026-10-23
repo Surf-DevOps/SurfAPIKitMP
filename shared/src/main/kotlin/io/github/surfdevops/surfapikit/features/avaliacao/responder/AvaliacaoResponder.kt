@@ -12,8 +12,9 @@ import kotlin.coroutines.cancellation.CancellationException
 data class AvaliacaoResponderRequest(
     /** 1 a 5. Único campo obrigatório. */
     val nota: Int,
+    /** Ids de `categorias`, sem repetição (máx. 20). */
     val categorias: List<Int>,
-    /** 10 a 300 caracteres quando presente. */
+    /** 10 a 300 caracteres quando presente (sem contar espaços nas pontas). */
     val comentario: String? = null
 )
 
@@ -22,7 +23,7 @@ internal data class AvaliacaoResponderEndpoint(val avaliacaoId: String) : Endpoi
     override val method = HttpMethod.Post
 }
 
-/** Grava nota, categorias e comentário. Status RESPONDIDA. */
+/** Grava nota, categorias e comentário. Só aceita PENDENTE (senão 409); passa a RESPONDIDA. */
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.avaliacaoResponder(
     avaliacaoId: String,
