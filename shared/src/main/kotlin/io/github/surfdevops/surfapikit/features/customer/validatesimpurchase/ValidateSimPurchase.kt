@@ -58,7 +58,7 @@ data class PedidoInfo(
 )
 
 internal object ValidateSimPurchaseEndpoint : Endpoint {
-    override val path = "spec-mobile/v3/customer/validate-purchase"
+    override val path = "spec-mobile/v2/customer/validate-purchase"
     override val method = HttpMethod.Get
 }
 
