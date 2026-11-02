@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v4.7.2")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v4.7.3")
 }
 ```
 
@@ -159,6 +159,7 @@ Você só precisa criar a tag. Nenhum passo manual.
 
 ## Changelog
 
+- **v4.7.3** — `consulta-iccid`: aceita o retorno do chip `NOT USED` — envelope com `transacao` (em vez de `nuTransacao`) e sem `mensagem` (vira `""`), e `stBloqueioChip`/`stPortin` como `"SIM"`/`"NAO"` (normalizados para 1/0). Sem mudança de API.
 - **v4.7.2** — Reverte a v4.7.1: `validate-purchase` continua em `spec-mobile/v2/customer/validate-purchase`. A v3 de 19/10/2026 é do `POST /v3/customer/login` (login por `nuMsisdn`), não dessa rota — confirmado pela collection Postman do backend.
 - **v4.7.1** — `ValidateSimPurchaseEndpoint` migrado de `spec-mobile/v2/customer/validate-purchase` para `spec-mobile/v3/customer/validate-purchase` (revertido na v4.7.2 — rota v3 não existe, mudança equivocada).
 - **v4.7.0** — Jornada de Avaliação no contrato real do spec-mobile (PR #2): `POST exibicao` manda `coRecarga`, `plataforma` e `versaoApp` (sai `origem`); respostas de exibição, responder, dispensar e loja trazem `resultado.idAvaliacao` (`id` segue aceito, deprecated), mais `reaproveitada` e `convidarAvaliarLoja`; `AvaliacaoErro` documenta os status HTTP. Inclui tudo da v4.6.0. A tag v4.5.0 (só a branch, sem o `noPerfil`) fica superada por esta.
