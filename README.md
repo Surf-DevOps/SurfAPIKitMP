@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v4.7.3")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v5.0.0")
 }
 ```
 
@@ -159,6 +159,7 @@ Você só precisa criar a tag. Nenhum passo manual.
 
 ## Changelog
 
+- **v5.0.0** — Novo `GET spec-mobile/v2/customer/perfil` (`CustomerProfileEndpoint`/`getCustomerProfile`): consulta se um CPF é beneficiário (ESTUDANTE/PROFESSOR/COLABORADOR), independente do `validate-purchase`. **Breaking:** `SimPurchaseResultado.noPerfil` (adicionado na v4.6.0) é removido — o perfil do beneficiário agora vem exclusivamente do novo `customer/perfil`.
 - **v4.7.3** — `consulta-iccid`: aceita o retorno do chip `NOT USED` — envelope com `transacao` (em vez de `nuTransacao`) e sem `mensagem` (vira `""`), e `stBloqueioChip`/`stPortin` como `"SIM"`/`"NAO"` (normalizados para 1/0). Sem mudança de API.
 - **v4.7.2** — Reverte a v4.7.1: `validate-purchase` continua em `spec-mobile/v2/customer/validate-purchase`. A v3 de 19/10/2026 é do `POST /v3/customer/login` (login por `nuMsisdn`), não dessa rota — confirmado pela collection Postman do backend.
 - **v4.7.1** — `ValidateSimPurchaseEndpoint` migrado de `spec-mobile/v2/customer/validate-purchase` para `spec-mobile/v3/customer/validate-purchase` (revertido na v4.7.2 — rota v3 não existe, mudança equivocada).
