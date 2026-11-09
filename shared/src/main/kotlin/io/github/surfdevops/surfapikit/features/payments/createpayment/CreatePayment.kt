@@ -11,6 +11,10 @@ import kotlin.coroutines.cancellation.CancellationException
 @Serializable
 enum class PaymentType { @SerialName("CARD") CARD, @SerialName("PIX") PIX }
 
+/** Hoje só existe a opção sem juros — o backend assume essa regra por padrão e avisa se isso mudar. */
+@Serializable
+enum class InstallmentType { @SerialName("WITHOUT_INTEREST") WITHOUT_INTEREST }
+
 @Serializable
 data class CreatePaymentRequest(
     val coMsisdn: Long,
@@ -31,7 +35,15 @@ data class CreatePaymentRequest(
      * Cartão novo a tokenizar quando não há `cardId` (a cobrança futura precisa de um card_id).
      * Mutuamente exclusivo com `cardId`.
      */
-    val newCard: ScheduledNewCard? = null
+    val newCard: ScheduledNewCard? = null,
+    /**
+     * Número de parcelas escolhido (1 a 12). O backend valida contra o máximo do plano
+     * (`CatalogSuccess.CustomerResult.parcelas`) e rejeita (erro 208) se vier maior, ou
+     * se `isRecurring == true` ao mesmo tempo (recarga recorrente não pode ser parcelada).
+     */
+    val installments: Int? = null,
+    /** Obrigatório quando `installments` é enviado e maior que 1. */
+    val installmentType: InstallmentType? = null
 ) {
     companion object {
         fun pixPayment(coMsisdn: Long, amount: Int, nuPlano: String, cupom: String? = null) = CreatePaymentRequest(

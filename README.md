@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v5.1.0")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v5.2.0")
 }
 ```
 
@@ -159,6 +159,7 @@ Você só precisa criar a tag. Nenhum passo manual.
 
 ## Changelog
 
+- **v5.2.0** — `CreatePaymentRequest` ganha `installments: Int?` (1 a 12) e `installmentType: InstallmentType?` (hoje só `WITHOUT_INTEREST`) para `POST v2/payments`. Backend valida `installments` contra o máximo do plano (`CatalogSuccess.CustomerResult.parcelas`) e rejeita (erro 208) se vier maior, ou se `isRecurring == true` junto. `installmentType` obrigatório quando `installments > 1`.
 - **v5.1.0** — Novo `createCustomerV4` (`POST spec-mobile/v4/customer/create-customer`) para o chip `NOT USED`: ativa a linha e cria o cliente na mesma chamada, com o mesmo body do v3. A resposta de sucesso segue a do v3 até o backend confirmar o formato. Erros conhecidos em `CreateCustomerV4Error` (150 ICCID não encontrado, 153 DDD divergente, 156 falha na ativação). Sem mudança no `createCustomer` v3.
 - **v5.0.0** — Novo `GET spec-mobile/v2/customer/perfil` (`CustomerProfileEndpoint`/`getCustomerProfile`): consulta se um CPF é beneficiário (ESTUDANTE/PROFESSOR/COLABORADOR), independente do `validate-purchase`. **Breaking:** `SimPurchaseResultado.noPerfil` (adicionado na v4.6.0) é removido — o perfil do beneficiário agora vem exclusivamente do novo `customer/perfil`.
 - **v4.7.3** — `consulta-iccid`: aceita o retorno do chip `NOT USED` — envelope com `transacao` (em vez de `nuTransacao`) e sem `mensagem` (vira `""`), e `stBloqueioChip`/`stPortin` como `"SIM"`/`"NAO"` (normalizados para 1/0). Sem mudança de API.
