@@ -59,9 +59,42 @@ internal object CreateCustomerEndpoint : Endpoint {
     override val method = HttpMethod.Post
 }
 
+/**
+ * Cadastro do chip `NOT USED`: o spec-mobile ativa a linha e cria o cliente na mesma chamada.
+ * O body é o mesmo do v3, e o `nuDDD` precisa ser o DDD do `nuMsisdn` do chip.
+ */
+internal object CreateCustomerV4Endpoint : Endpoint {
+    override val path = "spec-mobile/v4/customer/create-customer"
+    override val method = HttpMethod.Post
+}
+
+/** Códigos de [ApiError.Api] do `v4/customer/create-customer` vistos em prod (06/11/2026). */
+object CreateCustomerV4Error {
+    /** ICCID inválido ou não encontrado. */
+    const val ICCID_NOT_FOUND = 150
+    /** O `nuDDD` não corresponde ao número do chip. */
+    const val DDD_MISMATCH = 153
+    /** O backend não conseguiu ativar o chip. */
+    const val ACTIVATION_FAILED = 156
+}
+
 @Throws(ApiError::class, CancellationException::class)
-suspend fun SurfApiKit.createCustomer(request: CreateCustomerRequest): CreateCustomerSuccess {
-    val response: CreateCustomerSuccess = client.send(CreateCustomerEndpoint, body = request)
+suspend fun SurfApiKit.createCustomer(request: CreateCustomerRequest): CreateCustomerSuccess =
+    sendCreateCustomer(CreateCustomerEndpoint, request)
+
+/**
+ * Ativa o chip `NOT USED` e cria o cliente. A resposta de sucesso segue a do v3 até o backend
+ * confirmar o formato. Os erros conhecidos estão em [CreateCustomerV4Error].
+ */
+@Throws(ApiError::class, CancellationException::class)
+suspend fun SurfApiKit.createCustomerV4(request: CreateCustomerRequest): CreateCustomerSuccess =
+    sendCreateCustomer(CreateCustomerV4Endpoint, request)
+
+private suspend fun SurfApiKit.sendCreateCustomer(
+    endpoint: Endpoint,
+    request: CreateCustomerRequest,
+): CreateCustomerSuccess {
+    val response: CreateCustomerSuccess = client.send(endpoint, body = request)
     tokenStore.accessToken = response.resultado.accessToken
     tokenStore.tokenType = response.resultado.tokenType
     tokenStore.refreshToken = response.resultado.refreshToken
