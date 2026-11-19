@@ -21,7 +21,6 @@ import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response as OkHttpResponse
 import okhttp3.ResponseBody
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.create
@@ -118,6 +117,7 @@ internal class AuthInterceptor(private val tokenStore: TokenStore) : Interceptor
 class ApiClient internal constructor(
     val environment: ApiEnvironment,
     val tokenStore: TokenStore,
+    val httpLogLevel: HttpLogLevel = HttpLogLevel.NONE,
 ) {
 
     @PublishedApi
@@ -136,9 +136,10 @@ class ApiClient internal constructor(
         .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        })
+        .apply {
+            // Desligado por padrão; quando ligado, mascara cartão, senha e tokens.
+            SensitiveDataRedactor.interceptor(httpLogLevel)?.let(::addInterceptor)
+        }
         .build()
 
     /** Authenticated client used by every regular endpoint. */
