@@ -28,7 +28,8 @@ data class ConsolidatedQuerySuccess(
         val coMvnoFilha: Int? = null,
         val nuDocumento: String,
         @SerialName("detalhe_consumo") val detalheConsumo: DetalheConsumo? = null,
-        @SerialName("detalhe_plano") val detalhePlano: DetalhePlano,
+        /** Nulo quando a linha ainda não tem plano (ex.: logo após ativar um chip NOT USED). */
+        @SerialName("detalhe_plano") val detalhePlano: DetalhePlano? = null,
         val pixAutomatico: PixAutomatico? = null,
         val compreGanhe: CompreGanhe? = null,
         val mandouGanhou: MandouGanhou? = null
