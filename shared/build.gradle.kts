@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.androidx.startup.runtime)
     implementation(libs.androidx.core.ktx)
     implementation(libs.play.services.location)
+
+    testImplementation(libs.junit)
 }
 
 publishing {
