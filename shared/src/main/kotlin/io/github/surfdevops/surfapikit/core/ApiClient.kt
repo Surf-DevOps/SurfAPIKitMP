@@ -315,13 +315,22 @@ class ApiClient internal constructor(
         }
         runCatching { json.decodeFromString<ApiErrorResponse>(text) }
             .getOrNull()
-            ?.let { return ApiError.Api(it.erro, it.descricao) }
+            ?.let {
+                return when (val codigo = it.erro) {
+                    is ApiErrorCode.Numeric -> ApiError.Api(codigo.value, it.descricao)
+                    is ApiErrorCode.Symbolic -> ApiError.ApiSymbolic(codigo.value, it.descricao)
+                }
+            }
 
         runCatching { json.parseToJsonElement(text) as? JsonObject }
             .getOrNull()?.let { obj ->
                 val descricao = (obj["descricao"] as? JsonPrimitive)?.contentOrNull
                 if (descricao != null) {
-                    val codigo = (obj["erro"] as? JsonPrimitive)?.intOrNull ?: statusCode
+                    val erroPrimitive = obj["erro"] as? JsonPrimitive
+                    if (erroPrimitive != null && erroPrimitive.isString && erroPrimitive.intOrNull == null) {
+                        return ApiError.ApiSymbolic(erroPrimitive.content, descricao)
+                    }
+                    val codigo = erroPrimitive?.intOrNull ?: statusCode
                     return ApiError.Api(codigo, descricao)
                 }
                 (obj["message"] as? JsonPrimitive)?.contentOrNull?.let {
