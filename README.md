@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v6.0.0")
+    implementation("com.github.Surf-DevOps.SurfAPIKitMP:shared:v6.1.0")
 }
 ```
 
@@ -159,6 +159,7 @@ Você só precisa criar a tag. Nenhum passo manual.
 
 ## Changelog
 
+- **v6.1.0** — Recarga em Grupo (rotas `spec-mobile/v1/grupos/*`, **provisórias**: os nomes e campos seguem a sugestão do contrato "Recarga Grupo/Família — Comunicação entre Aplicações" e mudam quando o backend publicar o Swagger). Novo pacote `features/group` com `getGroupLinks`, `getGroup`, `getGroupParameters`, `getGroupEligibility`, `createGroup`, `renameGroup`, `deleteGroup`, `leaveGroup`, `addGroupMember`, `updateGroupMember(s)`, `removeGroupMember`, `rechargeGroup`, `getGroupRecurrence`, `activateGroupRecurrence` e `changeGroupRecurrenceCard`, e envelope `GroupResponse<T>`/`GroupAck`. Sem mudança nas APIs existentes.
 - **v6.0.0** — Ativação do chip `NOT USED` com compra do plano. Novo `createCustomerV4(CreateCustomerV4Request)` com `nuPlano`, `card` (cartão aberto; o backend cobra e tokeniza) e `isRecurring`; `CreateCustomerSuccess.resultado.recargaProgramada` opcional; `CreateCustomerV4Error` ganha 159 a 164. Novo `getActivationCatalog(nuIccid)` (`GET spec-mobile/v4/customer/catalogo-ativacao`, sem token), com o mesmo modelo do catálogo. Log HTTP agora é configurável em `SurfApiKit.configure(httpLogLevel=)`, **desligado por padrão**, e mascara cartão, CVV, senha, PIN/PUK, tokens e os headers `Authorization`/`token`/`Cookie`. **Breaking:** `ConsolidatedQuerySuccess...detalhePlano` e `ValidateSessionSuccess...detalhePlano` passam a ser nullable (vêm `null` enquanto o plano de uma linha recém-ativada não entra), e o log HTTP deixa de sair em BODY por padrão (antes vazava dados sensíveis até em release; ligue `HttpLogLevel.BODY` só em debug).
 - **v5.2.1** — `AppInfo.appVersion` agora extrai só o prefixo `X.Y.Z` do `versionName`. Builds debug têm `versionNameSuffix` (ex. `"1.1.0-debug"`), e esse valor crú quebrava a validação estrita de SemVer do backend em `POST avaliacao/exibicao` (400 `VALIDACAO_INVALIDA`), fazendo a Jornada de Avaliação nunca exibir a tela em debug mesmo com elegibilidade `true`.
 - **v5.2.0** — `CreatePaymentRequest` ganha `installments: Int?` (1 a 12) e `installmentType: InstallmentType?` (hoje só `WITHOUT_INTEREST`) para `POST v2/payments`. Backend valida `installments` contra o máximo do plano (`CatalogSuccess.CustomerResult.parcelas`) e rejeita (erro 208) se vier maior, ou se `isRecurring == true` junto. `installmentType` obrigatório quando `installments > 1`.
