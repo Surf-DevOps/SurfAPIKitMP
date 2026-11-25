@@ -21,6 +21,41 @@ data class CreateCustomerRequest(
     val nuDocumentoResponsavel: String? = null
 )
 
+/**
+ * Body do `v4/customer/create-customer`. Chip PROVISIONED: igual ao v3. Chip NOT USED: vai
+ * junto o plano escolhido ([nuPlano]) e o cartão ([card]); o backend cobra o plano, ativa o
+ * chip com a recarga paga e, com [isRecurring], agenda a recarga programada nesse cartão.
+ */
+@Serializable
+data class CreateCustomerV4Request(
+    val nuIccid: String,
+    val nuDDD: Int,
+    val dsNome: String,
+    val nuDocumento: String,
+    val dsPassword: String,
+    val noMvno: String,
+    val noPerfil: String? = null,
+    val nuDocumentoResponsavel: String? = null,
+    val nuPlano: String? = null,
+    val card: Card? = null,
+    val isRecurring: Boolean? = null,
+) {
+    @Serializable
+    data class Card(
+        val holderName: String,
+        val cardNumber: String,
+        /** MM */
+        val expiryMonth: String,
+        /** YY ou YYYY */
+        val expiryYear: String,
+        val cvv: String,
+    ) {
+        override fun toString(): String = "Card(final=${cardNumber.takeLast(4)})"
+    }
+
+    override fun toString(): String = "CreateCustomerV4Request(nuIccid=$nuIccid, nuPlano=$nuPlano)"
+}
+
 @Serializable
 data class CreateCustomerSuccess(
     val sucesso: Int,
@@ -43,7 +78,9 @@ data class CreateCustomerSuccess(
         val refreshToken: String,
         val dtExpiracao: String,
         val dtExpiracaoRefresh: String,
-        val tokenType: String
+        val tokenType: String,
+        /** Só na ativação do NOT USED com compra: a recarga programada foi agendada. */
+        val recargaProgramada: Boolean? = null,
     )
 
     @Serializable
@@ -74,8 +111,20 @@ object CreateCustomerV4Error {
     const val ICCID_NOT_FOUND = 150
     /** O `nuDDD` não corresponde ao número do chip. */
     const val DDD_MISMATCH = 153
-    /** O backend não conseguiu ativar o chip. */
+    /** O backend não conseguiu ativar o chip (com compra: o pagamento foi estornado ou fica para retomada). */
     const val ACTIVATION_FAILED = 156
+    /** Chip NOT USED sem plano e cartão. */
+    const val PLAN_REQUIRED = 159
+    /** Plano fora do catálogo do chip. */
+    const val PLAN_NOT_AVAILABLE = 160
+    /** Catálogo indisponível; nada foi cobrado. */
+    const val PLAN_LOOKUP_UNAVAILABLE = 161
+    /** Cartão recusado; nada foi cobrado nem ativado. */
+    const val PAYMENT_DECLINED = 162
+    /** Já existe uma ativação em andamento para o ICCID. */
+    const val ACTIVATION_IN_PROGRESS = 163
+    /** Ativação indisponível por configuração do backend; bloqueada antes de cobrar. */
+    const val ACTIVATION_UNAVAILABLE = 164
 }
 
 @Throws(ApiError::class, CancellationException::class)
@@ -89,6 +138,16 @@ suspend fun SurfApiKit.createCustomer(request: CreateCustomerRequest): CreateCus
 @Throws(ApiError::class, CancellationException::class)
 suspend fun SurfApiKit.createCustomerV4(request: CreateCustomerRequest): CreateCustomerSuccess =
     sendCreateCustomer(CreateCustomerV4Endpoint, request)
+
+/** Ativação com compra do plano (chip `NOT USED`). Ver [CreateCustomerV4Request]. */
+@Throws(ApiError::class, CancellationException::class)
+suspend fun SurfApiKit.createCustomerV4(request: CreateCustomerV4Request): CreateCustomerSuccess {
+    val response: CreateCustomerSuccess = client.send(CreateCustomerV4Endpoint, body = request)
+    tokenStore.accessToken = response.resultado.accessToken
+    tokenStore.tokenType = response.resultado.tokenType
+    tokenStore.refreshToken = response.resultado.refreshToken
+    return response
+}
 
 private suspend fun SurfApiKit.sendCreateCustomer(
     endpoint: Endpoint,

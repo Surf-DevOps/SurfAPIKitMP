@@ -23,7 +23,8 @@ data class ValidateSessionSuccess(
         val noMvno: String,
         val nuDocumento: String,
         @SerialName("detalhe_consumo") val detalheConsumo: DetalheConsumo,
-        @SerialName("detalhe_plano") val detalhePlano: DetalhePlano
+        /** Nulo quando a linha ainda não tem plano (ex.: logo após ativar um chip NOT USED). */
+        @SerialName("detalhe_plano") val detalhePlano: DetalhePlano? = null
     )
 
     @Serializable

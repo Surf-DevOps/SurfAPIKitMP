@@ -9,6 +9,7 @@ androidxSecurity = "1.1.0-alpha06"
 androidxStartup = "1.2.0"
 androidxCore = "1.13.1"
 playLocation = "21.3.0"
+junit = "4.13.2"
 androidMinSdk = "24"
 androidCompileSdk = "34"
 
@@ -26,6 +27,7 @@ androidx-security-crypto = { module = "androidx.security:security-crypto", versi
 androidx-startup-runtime = { module = "androidx.startup:startup-runtime", version.ref = "androidxStartup" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playLocation" }
+junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
